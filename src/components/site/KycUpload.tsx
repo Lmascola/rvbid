@@ -25,7 +25,7 @@ export function KycUpload({ onDone }: { onDone?: () => void }) {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!idFile || !selfie) return toast.error("Please attach both your ID and a selfie.");
+    if (!idFile || !selfie) { toast.error("Please attach both your ID and a selfie."); return; }
     setBusy(true);
     try {
       const [idPath, selfiePath] = await Promise.all([

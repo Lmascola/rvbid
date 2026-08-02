@@ -62,7 +62,7 @@ function AuthPage() {
       password: form.password,
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Signed in.");
     router.navigate({ to: "/dashboard" });
   }
@@ -70,7 +70,7 @@ function AuthPage() {
   async function signUp(e: React.FormEvent) {
     e.preventDefault();
     if (!form.full_name || !form.dob || !form.email || !form.phone || !form.state || !form.zip) {
-      return toast.error("Please complete every field.");
+      { toast.error("Please complete every field."); return; }
     }
     setBusy(true);
     const { data, error } = await supabase.auth.signUp({
@@ -83,7 +83,7 @@ function AuthPage() {
     });
     if (error) {
       setBusy(false);
-      return toast.error(error.message);
+      { toast.error(error.message); return; }
     }
     if (data.user) {
       await db
@@ -107,7 +107,7 @@ function AuthPage() {
     const result = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin,
     });
-    if (result.error) return toast.error("Google sign-in failed. Try email instead.");
+    if (result.error) { toast.error("Google sign-in failed. Try email instead."); return; }
     if (result.redirected) return;
     router.navigate({ to: "/dashboard" });
   }
