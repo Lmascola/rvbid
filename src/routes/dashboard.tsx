@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { KycUpload } from "@/components/site/KycUpload";
 import { useAuth } from "@/hooks/useAuth";
-import { db, money, num } from "@/lib/rvbid";
+import { db, money } from "@/lib/rvbid";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
