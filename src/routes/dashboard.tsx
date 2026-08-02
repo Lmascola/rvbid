@@ -591,5 +591,3 @@ function ListingList({
     </div>
   );
 }
-
-export { num };
