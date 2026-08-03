@@ -484,6 +484,7 @@ function BidsPanel() {
           disabled={busy}
           onClick={async () => {
             if (!listingId || !Number(amount)) { toast.error("Pick a listing and amount."); return; }
+            if (!anonymous && !alias.trim()) { toast.error("Enter the bidder's real name."); return; }
             setBusy(true);
             const { data, error } = await db.rpc("admin_place_bid", {
               _listing_id: listingId,
