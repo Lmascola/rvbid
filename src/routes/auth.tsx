@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { KycUpload } from "@/components/site/KycUpload";
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { mode?: "signin" | "signup" } => ({
     mode: search["mode"] === "signup" ? "signup" : "signin",
   }),
   head: () => ({
@@ -42,7 +42,7 @@ function AuthPage() {
   const { mode } = Route.useSearch();
   const router = useRouter();
   const { user, profile, refreshProfile } = useAuth();
-  const [tab, setTab] = useState<"signin" | "signup">(mode);
+  const [tab, setTab] = useState<"signin" | "signup">(mode ?? "signin");
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
     first_name: "",

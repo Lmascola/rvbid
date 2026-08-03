@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -18,11 +19,17 @@ import { Route as SoldRouteImport } from './routes/sold'
 import { Route as AuctionsIndexRouteImport } from './routes/auctions/index'
 import { Route as AuctionsIdRouteImport } from './routes/auctions/$id'
 import { Route as LegalSlugRouteImport } from './routes/legal/$slug'
+import { Route as ApiPublicCloseAuctionsRouteImport } from './routes/api/public/close-auctions'
 import { Route as ApiPublicDepositWatchRouteImport } from './routes/api/public/deposit-watch'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -65,6 +72,11 @@ const LegalSlugRoute = LegalSlugRouteImport.update({
   path: '/legal/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCloseAuctionsRoute = ApiPublicCloseAuctionsRouteImport.update({
+  id: '/api/public/close-auctions',
+  path: '/api/public/close-auctions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicDepositWatchRoute = ApiPublicDepositWatchRouteImport.update({
   id: '/api/public/deposit-watch',
   path: '/api/public/deposit-watch',
@@ -73,6 +85,7 @@ const ApiPublicDepositWatchRoute = ApiPublicDepositWatchRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
@@ -81,10 +94,12 @@ export interface FileRoutesByFullPath {
   '/auctions/$id': typeof AuctionsIdRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/auctions/': typeof AuctionsIndexRoute
+  '/api/public/close-auctions': typeof ApiPublicCloseAuctionsRoute
   '/api/public/deposit-watch': typeof ApiPublicDepositWatchRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
@@ -93,11 +108,13 @@ export interface FileRoutesByTo {
   '/auctions/$id': typeof AuctionsIdRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/auctions': typeof AuctionsIndexRoute
+  '/api/public/close-auctions': typeof ApiPublicCloseAuctionsRoute
   '/api/public/deposit-watch': typeof ApiPublicDepositWatchRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
@@ -106,12 +123,14 @@ export interface FileRoutesById {
   '/auctions/$id': typeof AuctionsIdRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/auctions/': typeof AuctionsIndexRoute
+  '/api/public/close-auctions': typeof ApiPublicCloseAuctionsRoute
   '/api/public/deposit-watch': typeof ApiPublicDepositWatchRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/auth'
     | '/contact'
     | '/dashboard'
@@ -120,10 +139,12 @@ export interface FileRouteTypes {
     | '/auctions/$id'
     | '/legal/$slug'
     | '/auctions/'
+    | '/api/public/close-auctions'
     | '/api/public/deposit-watch'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/auth'
     | '/contact'
     | '/dashboard'
@@ -132,10 +153,12 @@ export interface FileRouteTypes {
     | '/auctions/$id'
     | '/legal/$slug'
     | '/auctions'
+    | '/api/public/close-auctions'
     | '/api/public/deposit-watch'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/auth'
     | '/contact'
     | '/dashboard'
@@ -144,11 +167,13 @@ export interface FileRouteTypes {
     | '/auctions/$id'
     | '/legal/$slug'
     | '/auctions/'
+    | '/api/public/close-auctions'
     | '/api/public/deposit-watch'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   ContactRoute: typeof ContactRoute
   DashboardRoute: typeof DashboardRoute
@@ -157,6 +182,7 @@ export interface RootRouteChildren {
   AuctionsIdRoute: typeof AuctionsIdRoute
   LegalSlugRoute: typeof LegalSlugRoute
   AuctionsIndexRoute: typeof AuctionsIndexRoute
+  ApiPublicCloseAuctionsRoute: typeof ApiPublicCloseAuctionsRoute
   ApiPublicDepositWatchRoute: typeof ApiPublicDepositWatchRoute
 }
 
@@ -167,6 +193,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -225,6 +258,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LegalSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/close-auctions': {
+      id: '/api/public/close-auctions'
+      path: '/api/public/close-auctions'
+      fullPath: '/api/public/close-auctions'
+      preLoaderRoute: typeof ApiPublicCloseAuctionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/deposit-watch': {
       id: '/api/public/deposit-watch'
       path: '/api/public/deposit-watch'
@@ -237,6 +277,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   ContactRoute: ContactRoute,
   DashboardRoute: DashboardRoute,
@@ -245,6 +286,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuctionsIdRoute: AuctionsIdRoute,
   LegalSlugRoute: LegalSlugRoute,
   AuctionsIndexRoute: AuctionsIndexRoute,
+  ApiPublicCloseAuctionsRoute: ApiPublicCloseAuctionsRoute,
   ApiPublicDepositWatchRoute: ApiPublicDepositWatchRoute,
 }
 export const routeTree = rootRouteImport
