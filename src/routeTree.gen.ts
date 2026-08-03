@@ -19,6 +19,7 @@ import { Route as SoldRouteImport } from './routes/sold'
 import { Route as AuctionsIndexRouteImport } from './routes/auctions/index'
 import { Route as AuctionsIdRouteImport } from './routes/auctions/$id'
 import { Route as LegalSlugRouteImport } from './routes/legal/$slug'
+import { Route as ApiPublicCloseAuctionsRouteImport } from './routes/api/public/close-auctions'
 import { Route as ApiPublicDepositWatchRouteImport } from './routes/api/public/deposit-watch'
 
 const IndexRoute = IndexRouteImport.update({
@@ -71,6 +72,11 @@ const LegalSlugRoute = LegalSlugRouteImport.update({
   path: '/legal/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCloseAuctionsRoute = ApiPublicCloseAuctionsRouteImport.update({
+  id: '/api/public/close-auctions',
+  path: '/api/public/close-auctions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicDepositWatchRoute = ApiPublicDepositWatchRouteImport.update({
   id: '/api/public/deposit-watch',
   path: '/api/public/deposit-watch',
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/auctions/$id': typeof AuctionsIdRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/auctions/': typeof AuctionsIndexRoute
+  '/api/public/close-auctions': typeof ApiPublicCloseAuctionsRoute
   '/api/public/deposit-watch': typeof ApiPublicDepositWatchRoute
 }
 export interface FileRoutesByTo {
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/auctions/$id': typeof AuctionsIdRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/auctions': typeof AuctionsIndexRoute
+  '/api/public/close-auctions': typeof ApiPublicCloseAuctionsRoute
   '/api/public/deposit-watch': typeof ApiPublicDepositWatchRoute
 }
 export interface FileRoutesById {
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/auctions/$id': typeof AuctionsIdRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/auctions/': typeof AuctionsIndexRoute
+  '/api/public/close-auctions': typeof ApiPublicCloseAuctionsRoute
   '/api/public/deposit-watch': typeof ApiPublicDepositWatchRoute
 }
 export interface FileRouteTypes {
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/auctions/$id'
     | '/legal/$slug'
     | '/auctions/'
+    | '/api/public/close-auctions'
     | '/api/public/deposit-watch'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
     | '/auctions/$id'
     | '/legal/$slug'
     | '/auctions'
+    | '/api/public/close-auctions'
     | '/api/public/deposit-watch'
   id:
     | '__root__'
@@ -156,6 +167,7 @@ export interface FileRouteTypes {
     | '/auctions/$id'
     | '/legal/$slug'
     | '/auctions/'
+    | '/api/public/close-auctions'
     | '/api/public/deposit-watch'
   fileRoutesById: FileRoutesById
 }
@@ -170,6 +182,7 @@ export interface RootRouteChildren {
   AuctionsIdRoute: typeof AuctionsIdRoute
   LegalSlugRoute: typeof LegalSlugRoute
   AuctionsIndexRoute: typeof AuctionsIndexRoute
+  ApiPublicCloseAuctionsRoute: typeof ApiPublicCloseAuctionsRoute
   ApiPublicDepositWatchRoute: typeof ApiPublicDepositWatchRoute
 }
 
@@ -245,6 +258,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LegalSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/close-auctions': {
+      id: '/api/public/close-auctions'
+      path: '/api/public/close-auctions'
+      fullPath: '/api/public/close-auctions'
+      preLoaderRoute: typeof ApiPublicCloseAuctionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/deposit-watch': {
       id: '/api/public/deposit-watch'
       path: '/api/public/deposit-watch'
@@ -266,6 +286,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuctionsIdRoute: AuctionsIdRoute,
   LegalSlugRoute: LegalSlugRoute,
   AuctionsIndexRoute: AuctionsIndexRoute,
+  ApiPublicCloseAuctionsRoute: ApiPublicCloseAuctionsRoute,
   ApiPublicDepositWatchRoute: ApiPublicDepositWatchRoute,
 }
 export const routeTree = rootRouteImport
