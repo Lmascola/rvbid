@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { db } from "@/lib/rvbid";
+import { db, PASSWORD_RULES, passwordIsStrong } from "@/lib/rvbid";
 import { useAuth } from "@/hooks/useAuth";
 import { KycUpload } from "@/components/site/KycUpload";
 
@@ -20,10 +21,12 @@ export const Route = createFileRoute("/auth")({
       {
         name: "description",
         content:
-          "Create an RVBID account, verify your identity and fund your wallet to bid on used RV auctions.",
+          "Create an RVBID account with email or Google, verify your identity and fund your wallet to bid on used RV auctions.",
       },
       { property: "og:title", content: "Sign In or Register | RVBID" },
       { property: "og:description", content: "Join RVBID to bid on used RV auctions from $0." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: AuthPage,
@@ -42,13 +45,15 @@ function AuthPage() {
   const [tab, setTab] = useState<"signin" | "signup">(mode);
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
-    full_name: "",
+    first_name: "",
+    last_name: "",
     dob: "",
     email: "",
     phone: "",
     state: "",
     zip: "",
     password: "",
+    confirm: "",
   });
   const set = (key: string, value: string) => setForm((f) => ({ ...f, [key]: value }));
 
@@ -69,27 +74,40 @@ function AuthPage() {
 
   async function signUp(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.full_name || !form.dob || !form.email || !form.phone || !form.state || !form.zip) {
-      { toast.error("Please complete every field."); return; }
+    if (!form.first_name || !form.last_name || !form.dob || !form.email || !form.phone || !form.state || !form.zip) {
+      toast.error("Please complete every field."); return;
     }
+    if (!passwordIsStrong(form.password)) {
+      toast.error("Please choose a stronger password."); return;
+    }
+    if (form.password !== form.confirm) {
+      toast.error("Your passwords don't match."); return;
+    }
+    const fullName = `${form.first_name.trim()} ${form.last_name.trim()}`;
     setBusy(true);
     const { data, error } = await supabase.auth.signUp({
       email: form.email.trim(),
       password: form.password,
       options: {
         emailRedirectTo: window.location.origin,
-        data: { full_name: form.full_name },
+        data: {
+          full_name: fullName,
+          first_name: form.first_name.trim(),
+          last_name: form.last_name.trim(),
+        },
       },
     });
     if (error) {
       setBusy(false);
-      { toast.error(error.message); return; }
+      toast.error(error.message); return;
     }
     if (data.user) {
       await db
         .from("profiles")
         .update({
-          full_name: form.full_name,
+          full_name: fullName,
+          first_name: form.first_name.trim(),
+          last_name: form.last_name.trim(),
           dob: form.dob,
           phone: form.phone,
           state: form.state,
@@ -109,6 +127,7 @@ function AuthPage() {
     });
     if (result.error) { toast.error("Google sign-in failed. Try email instead."); return; }
     if (result.redirected) return;
+    await refreshProfile();
     router.navigate({ to: "/dashboard" });
   }
 
@@ -118,12 +137,16 @@ function AuthPage() {
         <p className="text-xs font-semibold uppercase tracking-widest text-primary">Step 2 of 2</p>
         <h1 className="mt-2 font-display text-3xl">Verify your identity</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Upload a government-issued ID and a selfie. Your account stays Pending until our team
-          approves it. Your documents are private and never shown to other bidders.
+          Identity verification is mandatory before your account is activated — this applies whether
+          you signed up with email or Google. Upload a government-issued ID and a selfie; you can use
+          your dashboard right away while our team reviews them.
         </p>
         <div className="panel mt-6 p-5">
           <KycUpload onDone={() => router.navigate({ to: "/dashboard" })} />
         </div>
+        <Button variant="ghost" className="mt-4 w-full" asChild>
+          <Link to="/dashboard">Skip for now — go to my dashboard</Link>
+        </Button>
       </div>
     );
   }
@@ -177,9 +200,20 @@ function AuthPage() {
           <form onSubmit={signUp} className="space-y-4">
             <p className="text-xs font-semibold uppercase tracking-widest text-primary">Step 1 of 2</p>
             <h1 className="font-display text-2xl">Create your RVBID account</h1>
-            <Field label="Full name">
-              <Input value={form.full_name} onChange={(e) => set("full_name", e.target.value)} required />
-            </Field>
+            <Button type="button" variant="outline" className="w-full" onClick={googleSignIn}>
+              Sign up with Google
+            </Button>
+            <p className="text-center text-[11px] uppercase tracking-widest text-muted-foreground">
+              or use your email
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="First name">
+                <Input value={form.first_name} onChange={(e) => set("first_name", e.target.value)} required />
+              </Field>
+              <Field label="Last name">
+                <Input value={form.last_name} onChange={(e) => set("last_name", e.target.value)} required />
+              </Field>
+            </div>
             <Field label="Date of birth">
               <Input type="date" value={form.dob} onChange={(e) => set("dob", e.target.value)} required />
             </Field>
@@ -208,18 +242,40 @@ function AuthPage() {
               </Field>
             </div>
             <Field label="Password">
-              <Input type="password" autoComplete="new-password" minLength={8} value={form.password} onChange={(e) => set("password", e.target.value)} required />
+              <Input type="password" autoComplete="new-password" value={form.password} onChange={(e) => set("password", e.target.value)} required />
             </Field>
-            <Button type="submit" className="w-full" disabled={busy}>
+            <ul className="grid gap-1 sm:grid-cols-2">
+              {PASSWORD_RULES.map((rule) => {
+                const ok = rule.test(form.password);
+                return (
+                  <li
+                    key={rule.label}
+                    className={`flex items-center gap-1.5 text-[11px] ${ok ? "text-success" : "text-muted-foreground"}`}
+                  >
+                    {ok ? <Check className="size-3" /> : <X className="size-3" />}
+                    {rule.label}
+                  </li>
+                );
+              })}
+            </ul>
+            <Field label="Confirm password">
+              <Input type="password" autoComplete="new-password" value={form.confirm} onChange={(e) => set("confirm", e.target.value)} required />
+            </Field>
+            {form.confirm && form.confirm !== form.password && (
+              <p className="text-[11px] text-destructive">Passwords don't match.</p>
+            )}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={busy || !passwordIsStrong(form.password) || form.password !== form.confirm}
+            >
               {busy ? "Creating account…" : "Continue to ID verification"}
-            </Button>
-            <Button type="button" variant="outline" className="w-full" onClick={googleSignIn}>
-              Continue with Google
             </Button>
             <p className="text-[11px] text-muted-foreground">
               By continuing you agree to our{" "}
               <Link to="/legal/$slug" params={{ slug: "terms" }} className="underline">Terms</Link> and{" "}
               <Link to="/legal/$slug" params={{ slug: "privacy" }} className="underline">Privacy Policy</Link>.
+              Identity verification is required before bidding or funding a wallet.
             </p>
           </form>
         )}
