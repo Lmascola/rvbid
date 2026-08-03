@@ -137,15 +137,15 @@ function AuthPage() {
         <h1 className="mt-2 font-display text-3xl">Verify your identity</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Identity verification is mandatory before your account is activated — this applies whether
-          you signed up with email or Google. Upload a government-issued ID and a selfie; you can use
-          your dashboard right away while our team reviews them.
+          you signed up with email or Google. Upload a government-issued ID and a selfie to continue;
+          your dashboard opens as soon as they're submitted, while our team reviews them.
         </p>
         <div className="panel mt-6 p-5">
           <KycUpload onDone={() => router.navigate({ to: "/dashboard" })} />
         </div>
-        <Button variant="ghost" className="mt-4 w-full" asChild>
-          <Link to="/dashboard">Skip for now — go to my dashboard</Link>
-        </Button>
+        <p className="mt-4 text-center text-[11px] text-muted-foreground">
+          Both documents are required — the dashboard unlocks once they're uploaded.
+        </p>
       </div>
     );
   }

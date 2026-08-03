@@ -73,6 +73,24 @@ function Dashboard() {
     );
   }
 
+  const documentsSubmitted = Boolean(profile?.kyc_id_url && profile?.kyc_selfie_url);
+
+  if (profile && !documentsSubmitted) {
+    return (
+      <div className="mx-auto w-full max-w-lg px-4 py-12 sm:px-6">
+        <p className="text-xs font-semibold uppercase tracking-widest text-primary">Step 2 of 2</p>
+        <h1 className="mt-2 font-display text-3xl">Upload your documents</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Your dashboard unlocks once you submit a government-issued ID and a selfie. Our team then
+          reviews them — bidding and wallet funding open after approval.
+        </p>
+        <div className="panel mt-6 p-5">
+          <KycUpload onDone={() => void refreshProfile()} />
+        </div>
+      </div>
+    );
+  }
+
   const available = Number(profile?.balance ?? 0) - Number(profile?.locked ?? 0);
   const approved = profile?.kyc_status === "approved";
   const data = activity.data;
