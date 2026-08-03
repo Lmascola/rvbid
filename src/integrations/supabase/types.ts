@@ -513,6 +513,7 @@ export type Database = {
     }
     Functions: {
       admin_claim_status: { Args: never; Returns: Json }
+      admin_delete_bid: { Args: { _bid_id: string }; Returns: Json }
       admin_listings: {
         Args: never
         Returns: {
