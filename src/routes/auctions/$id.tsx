@@ -249,14 +249,8 @@ function AuctionDetail() {
               Bid history <span className="text-muted-foreground">({num(bids.length || listing.bid_count)})</span>
             </h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              Bidding opened at {money(listing.starting_bid)}. Members who chose anonymity appear as a
-              generated ID such as X6521.
-              {sold && listing.bid_visibility === "winner_only"
-                ? " For this sold RV only the winning bid is shown."
-                : ""}
-              {sold && listing.bid_visibility === "hidden"
-                ? " Bidder details for this sold RV are private."
-                : ""}
+              Bidding opened at {money(listing.starting_bid)}. All bids are shown oldest to newest;
+              members who chose anonymity appear as a generated ID such as X6521.
             </p>
             <div className="mt-4 divide-y divide-border">
               {bids.length === 0 && (
@@ -265,16 +259,16 @@ function AuctionDetail() {
                 </p>
               )}
               {bids.map((bid, i) => (
-                <div key={bid.id} className="flex items-center justify-between py-3 text-sm">
+                <div key={bid.id} className="flex flex-col gap-1 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
                   <span className="flex items-center gap-2">
                     <span className="font-mono">{bid.alias}</span>
-                    {i === 0 && (
+                    {i === bids.length - 1 && (
                       <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
                         {sold ? "Winner" : "High bid"}
                       </span>
                     )}
                   </span>
-                  <span className="flex items-center gap-4">
+                  <span className="flex items-center justify-between gap-4 sm:justify-end">
                     <span className="text-muted-foreground">
                       {new Date(bid.created_at).toLocaleString()}
                     </span>
