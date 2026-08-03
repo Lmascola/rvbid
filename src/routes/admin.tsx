@@ -111,7 +111,43 @@ function AdminPage() {
   );
 }
 
+function NoTeamAccess() {
+  const { data, isLoading } = useAdminClaimStatus();
+  return (
+    <div className="mx-auto max-w-md px-4 py-24 text-center">
+      <h1 className="font-display text-2xl">Team access only</h1>
+      {isLoading ? (
+        <p className="mt-2 text-sm text-muted-foreground">Checking platform ownership…</p>
+      ) : data && !data.admin_exists && data.eligible ? (
+        <>
+          <p className="mt-2 text-sm text-muted-foreground">
+            No administrator exists yet. Claim ownership of this platform below — or use the Claim
+            Admin banner at the top of any page.
+          </p>
+          <div className="mt-6 overflow-hidden rounded-lg">
+            <ClaimAdminBanner />
+          </div>
+        </>
+      ) : data && !data.admin_exists ? (
+        <p className="mt-2 text-sm text-muted-foreground">
+          No administrator exists yet, but only the first registered account
+          {data.eligible_email ? ` (${data.eligible_email})` : ""} can claim administrator access.
+        </p>
+      ) : (
+        <p className="mt-2 text-sm text-muted-foreground">
+          This account doesn't have team permissions. Ask an existing team member to grant you
+          access.
+        </p>
+      )}
+      <Button variant="outline" className="mt-6" asChild>
+        <Link to="/dashboard">Back to my dashboard</Link>
+      </Button>
+    </div>
+  );
+}
+
 function useListings() {
+
   return useQuery({
     queryKey: ["admin-listings"],
     queryFn: async () => {
