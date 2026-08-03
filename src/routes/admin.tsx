@@ -123,8 +123,8 @@ function NoTeamAccess() {
       ) : data && !data.admin_exists && data.eligible ? (
         <>
           <p className="mt-2 text-sm text-muted-foreground">
-            No administrator exists yet. Claim ownership of this platform below — or use the Claim
-            Admin banner at the top of any page.
+            No administrator exists yet. This signed-in account can claim ownership below — or use
+            the Claim Admin banner at the top of any page.
           </p>
           <div className="mt-6 overflow-hidden rounded-lg">
             <ClaimAdminBanner />
@@ -132,8 +132,7 @@ function NoTeamAccess() {
         </>
       ) : data && !data.admin_exists ? (
         <p className="mt-2 text-sm text-muted-foreground">
-          No administrator exists yet, but only the first registered account
-          {data.eligible_email ? ` (${data.eligible_email})` : ""} can claim administrator access.
+          No administrator exists yet. Refresh the page, then use the Claim Admin option.
         </p>
       ) : (
         <p className="mt-2 text-sm text-muted-foreground">
