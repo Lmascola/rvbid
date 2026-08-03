@@ -130,19 +130,11 @@ function Home() {
         </div>
       </section>
 
-      <Section
-        title="Live auctions"
-        subtitle="Bidding closes when the countdown hits zero."
-        action={{ to: "/auctions", label: "All live auctions" }}
-      >
+      <Section title="Live auctions" subtitle="Bidding closes when the countdown hits zero.">
         <Grid listings={data?.live ?? []} loading={isLoading} />
       </Section>
 
-      <Section
-        title="Recently sold"
-        subtitle="Real closing prices from the last 10 completed auctions."
-        action={{ to: "/sold", label: "All sold RVs" }}
-      >
+      <Section title="Recently sold">
         <Grid listings={data?.sold ?? []} loading={isLoading} />
       </Section>
 
