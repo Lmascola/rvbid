@@ -14,6 +14,8 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "@/hooks/useAuth";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
+import { ClaimAdminBanner } from "@/components/site/ClaimAdminBanner";
+
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
