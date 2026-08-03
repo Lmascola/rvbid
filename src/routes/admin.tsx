@@ -79,27 +79,9 @@ function AdminPage() {
   }
 
   if (!isAdmin) {
-    return (
-      <div className="mx-auto max-w-md px-4 py-24 text-center">
-        <h1 className="font-display text-2xl">Team access only</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          This account doesn't have team permissions. If you own this platform and no team member
-          exists yet, claim ownership below.
-        </p>
-        <Button
-          className="mt-6"
-          onClick={async () => {
-            const { error } = await db.rpc("bootstrap_admin");
-            if (error) { toast.error(error.message.replace(/^.*?:\s*/, "")); return; }
-            toast.success("Team access granted — reloading.");
-            window.location.reload();
-          }}
-        >
-          Claim team access
-        </Button>
-      </div>
-    );
+    return <NoTeamAccess />;
   }
+
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6">
