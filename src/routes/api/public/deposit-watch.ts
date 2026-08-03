@@ -117,17 +117,21 @@ async function watch() {
   return { checked: (data ?? []).length, credited };
 }
 
+async function handle(request: Request) {
+  const { cronSecretRejection } = await import("@/lib/cron-auth.server");
+  const rejected = cronSecretRejection(request);
+  if (rejected) return rejected;
+  return new Response(JSON.stringify(await watch()), {
+    headers: { "content-type": "application/json" },
+  });
+}
+
 export const Route = createFileRoute("/api/public/deposit-watch")({
   server: {
     handlers: {
-      GET: async () =>
-        new Response(JSON.stringify(await watch()), {
-          headers: { "content-type": "application/json" },
-        }),
-      POST: async () =>
-        new Response(JSON.stringify(await watch()), {
-          headers: { "content-type": "application/json" },
-        }),
+      GET: ({ request }) => handle(request),
+      POST: ({ request }) => handle(request),
     },
   },
 });
+
