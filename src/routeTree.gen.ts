@@ -18,6 +18,7 @@ import { Route as SoldRouteImport } from './routes/sold'
 import { Route as AuctionsIndexRouteImport } from './routes/auctions/index'
 import { Route as AuctionsIdRouteImport } from './routes/auctions/$id'
 import { Route as LegalSlugRouteImport } from './routes/legal/$slug'
+import { Route as ApiPublicDepositWatchRouteImport } from './routes/api/public/deposit-watch'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -64,6 +65,11 @@ const LegalSlugRoute = LegalSlugRouteImport.update({
   path: '/legal/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicDepositWatchRoute = ApiPublicDepositWatchRouteImport.update({
+  id: '/api/public/deposit-watch',
+  path: '/api/public/deposit-watch',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/auctions/$id': typeof AuctionsIdRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/auctions/': typeof AuctionsIndexRoute
+  '/api/public/deposit-watch': typeof ApiPublicDepositWatchRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByTo {
   '/auctions/$id': typeof AuctionsIdRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/auctions': typeof AuctionsIndexRoute
+  '/api/public/deposit-watch': typeof ApiPublicDepositWatchRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -98,6 +106,7 @@ export interface FileRoutesById {
   '/auctions/$id': typeof AuctionsIdRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/auctions/': typeof AuctionsIndexRoute
+  '/api/public/deposit-watch': typeof ApiPublicDepositWatchRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
     | '/auctions/$id'
     | '/legal/$slug'
     | '/auctions/'
+    | '/api/public/deposit-watch'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -122,6 +132,7 @@ export interface FileRouteTypes {
     | '/auctions/$id'
     | '/legal/$slug'
     | '/auctions'
+    | '/api/public/deposit-watch'
   id:
     | '__root__'
     | '/'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/auctions/$id'
     | '/legal/$slug'
     | '/auctions/'
+    | '/api/public/deposit-watch'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -145,6 +157,7 @@ export interface RootRouteChildren {
   AuctionsIdRoute: typeof AuctionsIdRoute
   LegalSlugRoute: typeof LegalSlugRoute
   AuctionsIndexRoute: typeof AuctionsIndexRoute
+  ApiPublicDepositWatchRoute: typeof ApiPublicDepositWatchRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -212,6 +225,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LegalSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/deposit-watch': {
+      id: '/api/public/deposit-watch'
+      path: '/api/public/deposit-watch'
+      fullPath: '/api/public/deposit-watch'
+      preLoaderRoute: typeof ApiPublicDepositWatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -225,6 +245,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuctionsIdRoute: AuctionsIdRoute,
   LegalSlugRoute: LegalSlugRoute,
   AuctionsIndexRoute: AuctionsIndexRoute,
+  ApiPublicDepositWatchRoute: ApiPublicDepositWatchRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

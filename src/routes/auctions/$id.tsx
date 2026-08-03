@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Gauge, Lock, MapPin, Ruler, Users } from "lucide-react";
+import { FileText, Gauge, Lock, MapPin, Ruler, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Countdown } from "@/components/site/Countdown";
@@ -39,6 +39,8 @@ function AuctionDetail() {
   const [active, setActive] = useState(0);
   const [amount, setAmount] = useState("");
   const [vin, setVin] = useState<string | null>(null);
+  const [report, setReport] = useState<{ owned: boolean; vin?: string; report_url?: string } | null>(null);
+  const [buying, setBuying] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const listingQuery = useQuery({
@@ -48,7 +50,7 @@ function AuctionDetail() {
       await closeExpiredAuctions();
       const [{ data: listing }, { data: bids }] = await Promise.all([
         db.from("listings").select(LISTING_COLUMNS).eq("id", id).maybeSingle(),
-        db.from("bids").select("*").eq("listing_id", id).order("amount", { ascending: false }),
+        db.rpc("listing_bids", { _listing_id: id }),
       ]);
       return { listing: listing as Listing | null, bids: (bids ?? []) as Bid[] };
     },
@@ -63,6 +65,9 @@ function AuctionDetail() {
     }
     db.rpc("get_listing_vin", { _listing_id: id }).then(({ data }: { data: string | null }) =>
       setVin(data ?? null),
+    );
+    db.rpc("my_vehicle_report", { _listing_id: id }).then(({ data }: { data: any }) =>
+      setReport(data ?? null),
     );
   }, [id, verified]);
 
@@ -187,6 +192,58 @@ function AuctionDetail() {
             </p>
           </div>
 
+          {listing.report_available && (
+            <div className="panel mt-6 p-5">
+              <h2 className="text-base font-semibold">Vehicle history report (optional)</h2>
+              {report?.owned ? (
+                <div className="mt-3 space-y-2 text-sm">
+                  <p className="text-success">Purchased — thanks!</p>
+                  <p className="font-mono">VIN {report.vin}</p>
+                  {report.report_url ? (
+                    <Button size="sm" variant="outline" asChild>
+                      <a href={report.report_url} target="_blank" rel="noreferrer">Open report</a>
+                    </Button>
+                  ) : (
+                    <p className="text-muted-foreground">
+                      Your report is being prepared and will be emailed to you shortly.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Get the full VIN plus a title, odometer and accident history report for this RV
+                    for {money(listing.report_price)}, charged to your wallet balance.
+                  </p>
+                  <Button
+                    size="sm"
+                    className="mt-4"
+                    disabled={buying || !verified}
+                    onClick={async () => {
+                      setBuying(true);
+                      const { error } = await db.rpc("purchase_vehicle_report", { _listing_id: id });
+                      setBuying(false);
+                      if (error) {
+                        toast.error(error.message.replace(/^.*?:\s*/, ""));
+                        return;
+                      }
+                      const { data } = await db.rpc("my_vehicle_report", { _listing_id: id });
+                      setReport(data ?? null);
+                      toast.success("Vehicle history report unlocked.");
+                    }}
+                  >
+                    <FileText className="size-4" /> Buy report for {money(listing.report_price)}
+                  </Button>
+                  {!verified && (
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      Available to verified members with wallet funds.
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
           <div className="panel mt-6 p-5">
             <h2 className="text-base font-semibold">
               Bid history <span className="text-muted-foreground">({num(bids.length || listing.bid_count)})</span>
@@ -194,6 +251,12 @@ function AuctionDetail() {
             <p className="mt-1 text-xs text-muted-foreground">
               Bidding opened at {money(listing.starting_bid)}. Members who chose anonymity appear as a
               generated ID such as X6521.
+              {sold && listing.bid_visibility === "winner_only"
+                ? " For this sold RV only the winning bid is shown."
+                : ""}
+              {sold && listing.bid_visibility === "hidden"
+                ? " Bidder details for this sold RV are private."
+                : ""}
             </p>
             <div className="mt-4 divide-y divide-border">
               {bids.length === 0 && (
