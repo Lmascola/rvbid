@@ -42,6 +42,9 @@ export type Listing = {
   sold_price: number | null;
   winner_alias: string | null;
   queue_order: number;
+  report_available: boolean;
+  report_price: number;
+  bid_visibility: string;
   created_at: string;
 };
 
@@ -58,6 +61,8 @@ export type Bid = {
 export type Profile = {
   id: string;
   full_name: string;
+  first_name: string;
+  last_name: string;
   dob: string | null;
   email: string;
   phone: string | null;
