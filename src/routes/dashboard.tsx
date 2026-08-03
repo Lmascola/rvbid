@@ -273,38 +273,132 @@ function Stat({ label, value, highlight }: { label: string; value: string; highl
   );
 }
 
-function DepositForm({ onSaved }: { onSaved: () => void }) {
+function DepositFlow({ onChanged }: { onChanged: () => void }) {
   const { user } = useAuth();
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState("USDT");
-  const [hash, setHash] = useState("");
   const [busy, setBusy] = useState(false);
+
+  const intentQuery = useQuery({
+    queryKey: ["deposit-intent", user?.id],
+    enabled: Boolean(user),
+    refetchInterval: 15_000,
+    queryFn: async () => {
+      const { data } = await db
+        .from("deposit_intents")
+        .select("*")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      return (data?.[0] ?? null) as any;
+    },
+  });
+
+  const intent = intentQuery.data;
+  const pending = intent && intent.status === "awaiting";
+
+  // While a deposit is pending, ask the backend to check the chain for the transfer.
+  useEffect(() => {
+    if (!pending) return;
+    let stop = false;
+    const poll = async () => {
+      try {
+        await fetch("/api/public/deposit-watch", { method: "POST" });
+      } catch {
+        /* ignore */
+      }
+      if (stop) return;
+      const before = intent?.status;
+      const refreshed = await intentQuery.refetch();
+      if (refreshed.data?.status === "credited" && before !== "credited") {
+        toast.success("Deposit detected — your wallet has been credited.");
+        onChanged();
+      }
+    };
+    void poll();
+    const timer = setInterval(poll, 25_000);
+    return () => {
+      stop = true;
+      clearInterval(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pending, intent?.id]);
+
+  if (pending) {
+    return (
+      <div className="mt-6 border-t border-border pt-5">
+        <p className="text-sm font-semibold">
+          Send {money(intent.amount)} in {intent.currency}
+          {intent.network ? ` on ${intent.network}` : ""}
+        </p>
+        <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start">
+          {intent.qr_url && (
+            <img
+              src={intent.qr_url}
+              alt={`${intent.currency} deposit QR code`}
+              className="size-40 rounded bg-secondary object-contain"
+            />
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="break-all font-mono text-xs text-muted-foreground">{intent.address}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3"
+              onClick={() => {
+                void navigator.clipboard.writeText(intent.address);
+                toast.success("Address copied.");
+              }}
+            >
+              <Copy className="size-3.5" /> Copy address
+            </Button>
+            <p className="mt-4 flex items-center gap-2 text-sm text-primary">
+              <Loader2 className="size-4 animate-spin" /> Watching the network for your transfer…
+            </p>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Keep this page open if you like — crediting happens automatically, usually within a few
+              minutes of network confirmation. Send only {intent.currency}
+              {intent.network ? ` on ${intent.network}` : ""} to this address.
+            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-3"
+              onClick={async () => {
+                await db.from("deposit_intents").update({ status: "expired" }).eq("id", intent.id);
+                void intentQuery.refetch();
+              }}
+            >
+              Cancel this deposit
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form
-      className="mt-6 grid gap-3 border-t border-border pt-5 sm:grid-cols-4"
+      className="mt-6 grid gap-3 border-t border-border pt-5 sm:grid-cols-3"
       onSubmit={async (e) => {
         e.preventDefault();
         if (!Number(amount)) {
-          toast.error("Enter the amount you sent.");
+          toast.error("Enter the amount you want to deposit.");
           return;
         }
         setBusy(true);
-        const { error } = await db.from("deposits").insert({
-          user_id: user!.id,
-          amount: Number(amount),
-          currency,
-          tx_hash: hash,
+        const { error } = await db.rpc("create_deposit_intent", {
+          _amount: Number(amount),
+          _currency: currency,
         });
         setBusy(false);
         if (error) {
-          toast.error(error.message);
+          toast.error(error.message.replace(/^.*?:\s*/, ""));
           return;
         }
-        toast.success("Deposit submitted for verification.");
         setAmount("");
-        setHash("");
-        onSaved();
+        await intentQuery.refetch();
+        toast.success("Deposit started — send the funds to the address shown.");
       }}
     >
       <div className="space-y-1.5">
@@ -323,18 +417,15 @@ function DepositForm({ onSaved }: { onSaved: () => void }) {
           ))}
         </select>
       </div>
-      <div className="space-y-1.5 sm:col-span-2">
-        <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-          Transaction hash
-        </Label>
-        <Input value={hash} onChange={(e) => setHash(e.target.value)} />
+      <div className="flex items-end">
+        <Button type="submit" disabled={busy} className="w-full">
+          <Send className="size-4" /> {busy ? "Starting…" : "Send"}
+        </Button>
       </div>
-      <Button type="submit" disabled={busy} className="sm:col-span-4">
-        {busy ? "Submitting…" : "Notify us of my deposit"}
-      </Button>
     </form>
   );
 }
+
 
 function WithdrawForm({ available, onSaved }: { available: number; onSaved: () => void }) {
   const { user } = useAuth();
