@@ -470,11 +470,13 @@ function BidsPanel() {
         )}
         <F label="Amount"><Input value={amount} onChange={(e) => setAmount(e.target.value)} /></F>
         <div className="flex items-center justify-between">
-          <span className="text-sm">Post anonymously (generated tag)</span>
+          <span className="text-sm">
+            Post anonymously <span className="text-muted-foreground">(generated tag)</span>
+          </span>
           <Switch checked={anonymous} onCheckedChange={setAnonymous} />
         </div>
         {!anonymous && (
-          <F label="Bidder name shown publicly">
+          <F label="Real name shown publicly">
             <Input value={alias} onChange={(e) => setAlias(e.target.value)} placeholder="e.g. Marcus D." />
           </F>
         )}
@@ -482,6 +484,7 @@ function BidsPanel() {
           disabled={busy}
           onClick={async () => {
             if (!listingId || !Number(amount)) { toast.error("Pick a listing and amount."); return; }
+            if (!anonymous && !alias.trim()) { toast.error("Enter the bidder's real name."); return; }
             setBusy(true);
             const { data, error } = await db.rpc("admin_place_bid", {
               _listing_id: listingId,
@@ -514,7 +517,9 @@ function BidsPanel() {
               <div key={b.id} className="flex items-center justify-between gap-3 p-3 text-sm">
                 <span>
                   <span className="font-mono">{b.alias}</span>
-                  <span className="ml-2 text-xs text-muted-foreground">{b.source}</span>
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    {b.source} · {new Date(b.created_at).toLocaleString()}
+                  </span>
                 </span>
                 <span className="flex items-center gap-3">
                   <span className="font-display">{money(b.amount)}</span>
@@ -522,9 +527,12 @@ function BidsPanel() {
                     type="button"
                     aria-label="Delete bid"
                     onClick={async () => {
-                      const { error } = await db.from("bids").delete().eq("id", b.id);
-                      if (error) { toast.error(error.message); return; }
+                      if (!confirm(`Delete this ${money(b.amount)} bid?`)) return;
+                      const { error } = await db.rpc("admin_delete_bid", { _bid_id: b.id });
+                      if (error) { toast.error(error.message.replace(/^.*?:\s*/, "")); return; }
+                      toast.success("Bid deleted — current bid recalculated.");
                       void bids.refetch();
+                      void listings.refetch();
                     }}
                   >
                     <Trash2 className="size-3.5 text-muted-foreground" />

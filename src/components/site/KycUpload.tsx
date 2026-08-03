@@ -32,10 +32,17 @@ export function KycUpload({ onDone }: { onDone?: () => void }) {
         upload(idFile, "id"),
         upload(selfie, "selfie"),
       ]);
-      await db
+      const { error: updateError } = await db
         .from("profiles")
-        .update({ kyc_id_url: idPath, kyc_selfie_url: selfiePath, kyc_status: "pending" })
-        .eq("id", user!.id);
+        .update({
+          kyc_id_url: idPath,
+          kyc_selfie_url: selfiePath,
+          kyc_status: profile?.kyc_status === "approved" ? "approved" : "pending",
+        })
+        .eq("id", user!.id)
+        .select("id")
+        .maybeSingle();
+      if (updateError) throw updateError;
       await refreshProfile();
       toast.success("Documents submitted. Your account is pending review.");
       onDone?.();
