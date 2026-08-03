@@ -134,46 +134,18 @@ function Dashboard() {
           <div className="panel p-5">
             <h2 className="font-display text-lg">Fund your wallet</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Send only the listed asset on the listed network, then tell us the transaction hash so we
-              can credit your balance.
+              Enter an amount and press Send — we'll show you the deposit address our team assigned
+              and watch the network for your transfer. Your balance updates automatically once the
+              transaction is detected; there is nothing to paste or submit.
             </p>
-            {(data?.addresses ?? []).length === 0 ? (
-              <p className="mt-4 text-sm text-muted-foreground">
-                Your deposit address is being assigned. Contact support if it doesn't appear shortly.
+            {!approved ? (
+              <p className="mt-4 rounded-md border border-border bg-secondary p-4 text-sm text-muted-foreground">
+                Wallet funding unlocks after our team approves your ID verification. Deposit addresses
+                and QR codes are issued to approved accounts only.
               </p>
             ) : (
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                {(data?.addresses ?? []).map((addr: any) => (
-                  <div key={addr.id} className="rounded-lg border border-border p-4">
-                    <p className="text-sm font-semibold">
-                      {addr.currency} {addr.network ? `· ${addr.network}` : ""}
-                    </p>
-                    {addr.qr_url && (
-                      <img
-                        src={addr.qr_url}
-                        alt={`${addr.currency} deposit QR code`}
-                        className="mt-3 size-36 rounded bg-secondary object-contain"
-                      />
-                    )}
-                    <p className="mt-3 break-all font-mono text-xs text-muted-foreground">
-                      {addr.address}
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-3"
-                      onClick={() => {
-                        void navigator.clipboard.writeText(addr.address);
-                        toast.success("Address copied.");
-                      }}
-                    >
-                      <Copy className="size-3.5" /> Copy
-                    </Button>
-                  </div>
-                ))}
-              </div>
+              <DepositFlow onChanged={() => { void activity.refetch(); void refreshProfile(); }} />
             )}
-            <DepositForm onSaved={() => void activity.refetch()} />
           </div>
           <HistoryTable
             title="Deposit history"
@@ -186,6 +158,7 @@ function Dashboard() {
             ]}
           />
         </TabsContent>
+
 
         <TabsContent value="withdrawals" className="mt-4 space-y-4">
           <div className="panel p-5">
