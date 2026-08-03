@@ -45,7 +45,7 @@ export function Header() {
             <>
               {isAdmin && (
                 <Button variant="outline" size="sm" onClick={() => router.navigate({ to: "/admin" })}>
-                  <ShieldCheck className="size-4" /> Admin
+                  <ShieldCheck className="size-4" /> Team
                 </Button>
               )}
               <Button variant="secondary" size="sm" onClick={() => router.navigate({ to: "/dashboard" })}>
