@@ -1,0 +1,48 @@
+services:
+  app:
+    build:
+      context: .
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
+        VITE_SUPABASE_PROJECT_ID: ${VITE_SUPABASE_PROJECT_ID}
+        VITE_SELF_HOSTED: "true"
+    env_file: .env
+    restart: unless-stopped
+    expose: ["3000"]
+    healthcheck:
+      test: ["CMD", "bun", "-e", "await fetch('http://localhost:3000/').then(r=>process.exit(r.ok?0:1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  # Scheduled automation without host cron: closes ended auctions every minute and
+  # scans the chain for pending deposits every 2 minutes.
+  cron:
+    image: alpine:3
+    restart: unless-stopped
+    env_file: .env
+    depends_on: [app]
+    command: >
+      sh -c "apk add --no-cache curl >/dev/null &&
+      while true; do
+        curl -fsS -X POST -H \"x-cron-secret: $$CRON_SECRET\" http://app:3000/api/public/close-auctions >/dev/null 2>&1;
+        if [ $$(( $$(date +%M) % 2 )) -eq 0 ]; then
+          curl -fsS -X POST -H \"x-cron-secret: $$CRON_SECRET\" http://app:3000/api/public/deposit-watch >/dev/null 2>&1;
+        fi;
+        sleep 60;
+      done"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [app]
+
+volumes:
+  caddy_data:
+  caddy_config:

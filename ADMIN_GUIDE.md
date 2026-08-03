@@ -6,15 +6,22 @@ dashboards — just the app.
 ## 1. Get team access (one time, repository owner)
 
 1. Open the live site and create a normal account at `/auth` (or sign in with
-   Google) using the email you want as the owner account.
-2. Go to `/admin`. Because no team member exists yet, you'll see
-   **Claim team access** — press it. The page reloads with full access.
-3. From then on, the header shows a **Team** button whenever you're signed in.
-4. To add colleagues: **Members & KYC → Grant team access by email** (they must
+   Google) using the email you want as the owner account. On a fresh database
+   this must be the **first** account registered.
+2. While signed in, a **Claim Admin** banner appears at the top of every page
+   (directly under the header) as long as the platform has no administrator and
+   your account is the first registered one. Press **Claim Admin** — you are
+   granted the admin role and redirected straight to `/admin`.
+3. The banner disappears permanently for everyone once an administrator exists;
+   the database refuses any further claim. `/admin` also shows the same claim
+   option if you land there first.
+4. From then on, the header shows a **Team** button whenever you're signed in.
+5. To add colleagues: **Members & KYC → Grant team access by email** (they must
    have signed up first).
 
-The claim button only works while the platform has zero team members, so it
-can't be used against you later.
+The claim is enforced server-side: it works only while zero administrators exist
+and only for the earliest-registered account, so it can't be used against you.
+
 
 ## 2. Listings tab — create and edit RVs
 

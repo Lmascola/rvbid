@@ -11,6 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
+import { ClaimAdminBanner, useAdminClaimStatus } from "@/components/site/ClaimAdminBanner";
+
 import { db, money } from "@/lib/rvbid";
 
 export const Route = createFileRoute("/admin")({
@@ -79,27 +81,9 @@ function AdminPage() {
   }
 
   if (!isAdmin) {
-    return (
-      <div className="mx-auto max-w-md px-4 py-24 text-center">
-        <h1 className="font-display text-2xl">Team access only</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          This account doesn't have team permissions. If you own this platform and no team member
-          exists yet, claim ownership below.
-        </p>
-        <Button
-          className="mt-6"
-          onClick={async () => {
-            const { error } = await db.rpc("bootstrap_admin");
-            if (error) { toast.error(error.message.replace(/^.*?:\s*/, "")); return; }
-            toast.success("Team access granted — reloading.");
-            window.location.reload();
-          }}
-        >
-          Claim team access
-        </Button>
-      </div>
-    );
+    return <NoTeamAccess />;
   }
+
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6">
@@ -129,7 +113,43 @@ function AdminPage() {
   );
 }
 
+function NoTeamAccess() {
+  const { data, isLoading } = useAdminClaimStatus();
+  return (
+    <div className="mx-auto max-w-md px-4 py-24 text-center">
+      <h1 className="font-display text-2xl">Team access only</h1>
+      {isLoading ? (
+        <p className="mt-2 text-sm text-muted-foreground">Checking platform ownership…</p>
+      ) : data && !data.admin_exists && data.eligible ? (
+        <>
+          <p className="mt-2 text-sm text-muted-foreground">
+            No administrator exists yet. Claim ownership of this platform below — or use the Claim
+            Admin banner at the top of any page.
+          </p>
+          <div className="mt-6 overflow-hidden rounded-lg">
+            <ClaimAdminBanner />
+          </div>
+        </>
+      ) : data && !data.admin_exists ? (
+        <p className="mt-2 text-sm text-muted-foreground">
+          No administrator exists yet, but only the first registered account
+          {data.eligible_email ? ` (${data.eligible_email})` : ""} can claim administrator access.
+        </p>
+      ) : (
+        <p className="mt-2 text-sm text-muted-foreground">
+          This account doesn't have team permissions. Ask an existing team member to grant you
+          access.
+        </p>
+      )}
+      <Button variant="outline" className="mt-6" asChild>
+        <Link to="/dashboard">Back to my dashboard</Link>
+      </Button>
+    </div>
+  );
+}
+
 function useListings() {
+
   return useQuery({
     queryKey: ["admin-listings"],
     queryFn: async () => {
