@@ -130,19 +130,11 @@ function Home() {
         </div>
       </section>
 
-      <Section
-        title="Live auctions"
-        subtitle="Bidding closes when the countdown hits zero."
-        action={{ to: "/auctions", label: "All live auctions" }}
-      >
+      <Section title="Live auctions" subtitle="Bidding closes when the countdown hits zero.">
         <Grid listings={data?.live ?? []} loading={isLoading} />
       </Section>
 
-      <Section
-        title="Recently sold"
-        subtitle="Real closing prices from the last 10 completed auctions."
-        action={{ to: "/sold", label: "All sold RVs" }}
-      >
+      <Section title="Recently sold">
         <Grid listings={data?.sold ?? []} loading={isLoading} />
       </Section>
 
@@ -170,24 +162,17 @@ function Home() {
 function Section({
   title,
   subtitle,
-  action,
   children,
 }: {
   title: string;
-  subtitle: string;
-  action: { to: string; label: string };
+  subtitle?: string;
   children: React.ReactNode;
 }) {
   return (
     <section className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="font-display text-2xl sm:text-3xl">{title}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
-        </div>
-        <Button variant="ghost" size="sm" asChild>
-          <Link to={action.to}>{action.label} →</Link>
-        </Button>
+      <div className="mb-6">
+        <h2 className="font-display text-2xl sm:text-3xl">{title}</h2>
+        {subtitle ? <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p> : null}
       </div>
       {children}
     </section>
