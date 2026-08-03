@@ -470,11 +470,13 @@ function BidsPanel() {
         )}
         <F label="Amount"><Input value={amount} onChange={(e) => setAmount(e.target.value)} /></F>
         <div className="flex items-center justify-between">
-          <span className="text-sm">Post anonymously (generated tag)</span>
+          <span className="text-sm">
+            Post anonymously <span className="text-muted-foreground">(generated tag)</span>
+          </span>
           <Switch checked={anonymous} onCheckedChange={setAnonymous} />
         </div>
         {!anonymous && (
-          <F label="Bidder name shown publicly">
+          <F label="Real name shown publicly">
             <Input value={alias} onChange={(e) => setAlias(e.target.value)} placeholder="e.g. Marcus D." />
           </F>
         )}
