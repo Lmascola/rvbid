@@ -6,7 +6,18 @@ import { supabase } from "@/integrations/supabase/client";
 export const db = supabase as any;
 
 export const LISTING_COLUMNS =
-  "id,title,year,make,model,vin_masked,mileage,sleeps,length_ft,rv_class,location,description,images,starting_bid,current_bid,bid_count,status,ends_at,sold_at,sold_price,winner_alias,queue_order,created_at,updated_at";
+  "id,title,year,make,model,vin_masked,mileage,sleeps,length_ft,rv_class,location,description,images,starting_bid,current_bid,bid_count,status,ends_at,sold_at,sold_price,winner_alias,queue_order,report_available,report_price,bid_visibility,created_at,updated_at";
+
+export const PASSWORD_RULES = [
+  { label: "At least 10 characters", test: (v: string) => v.length >= 10 },
+  { label: "One uppercase letter", test: (v: string) => /[A-Z]/.test(v) },
+  { label: "One lowercase letter", test: (v: string) => /[a-z]/.test(v) },
+  { label: "One number", test: (v: string) => /\d/.test(v) },
+  { label: "One symbol", test: (v: string) => /[^A-Za-z0-9]/.test(v) },
+];
+
+export const passwordIsStrong = (value: string) => PASSWORD_RULES.every((r) => r.test(value));
+
 
 export type Listing = {
   id: string;
