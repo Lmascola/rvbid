@@ -31,8 +31,15 @@ async function closeAuctions() {
 export const Route = createFileRoute("/api/public/close-auctions")({
   server: {
     handlers: {
-      GET: () => closeAuctions(),
-      POST: () => closeAuctions(),
+      GET: async ({ request }) => {
+        const { cronSecretRejection } = await import("@/lib/cron-auth.server");
+        return cronSecretRejection(request) ?? (await closeAuctions());
+      },
+      POST: async ({ request }) => {
+        const { cronSecretRejection } = await import("@/lib/cron-auth.server");
+        return cronSecretRejection(request) ?? (await closeAuctions());
+      },
     },
   },
 });
+
