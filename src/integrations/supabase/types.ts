@@ -82,6 +82,54 @@ export type Database = {
         }
         Relationships: []
       }
+      deposit_intents: {
+        Row: {
+          address: string
+          amount: number
+          created_at: string
+          credited_at: string | null
+          currency: string
+          detected_amount: number | null
+          detected_tx: string | null
+          expires_at: string
+          id: string
+          network: string
+          qr_url: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          address: string
+          amount: number
+          created_at?: string
+          credited_at?: string | null
+          currency?: string
+          detected_amount?: number | null
+          detected_tx?: string | null
+          expires_at?: string
+          id?: string
+          network?: string
+          qr_url?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          address?: string
+          amount?: number
+          created_at?: string
+          credited_at?: string | null
+          currency?: string
+          detected_amount?: number | null
+          detected_tx?: string | null
+          expires_at?: string
+          id?: string
+          network?: string
+          qr_url?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       deposits: {
         Row: {
           amount: number
@@ -163,6 +211,7 @@ export type Database = {
       listings: {
         Row: {
           bid_count: number
+          bid_visibility: string
           created_at: string
           current_bid: number
           description: string | null
@@ -175,6 +224,9 @@ export type Database = {
           mileage: number | null
           model: string | null
           queue_order: number
+          report_available: boolean
+          report_price: number
+          report_url: string | null
           rv_class: string | null
           sleeps: number | null
           sold_at: string | null
@@ -191,6 +243,7 @@ export type Database = {
         }
         Insert: {
           bid_count?: number
+          bid_visibility?: string
           created_at?: string
           current_bid?: number
           description?: string | null
@@ -203,6 +256,9 @@ export type Database = {
           mileage?: number | null
           model?: string | null
           queue_order?: number
+          report_available?: boolean
+          report_price?: number
+          report_url?: string | null
           rv_class?: string | null
           sleeps?: number | null
           sold_at?: string | null
@@ -219,6 +275,7 @@ export type Database = {
         }
         Update: {
           bid_count?: number
+          bid_visibility?: string
           created_at?: string
           current_bid?: number
           description?: string | null
@@ -231,6 +288,9 @@ export type Database = {
           mileage?: number | null
           model?: string | null
           queue_order?: number
+          report_available?: boolean
+          report_price?: number
+          report_url?: string | null
           rv_class?: string | null
           sleeps?: number | null
           sold_at?: string | null
@@ -254,12 +314,14 @@ export type Database = {
           created_at: string
           dob: string | null
           email: string
+          first_name: string
           full_name: string
           id: string
           is_anonymous: boolean
           kyc_id_url: string | null
           kyc_selfie_url: string | null
           kyc_status: string
+          last_name: string
           locked: number
           phone: string | null
           state: string | null
@@ -272,12 +334,14 @@ export type Database = {
           created_at?: string
           dob?: string | null
           email?: string
+          first_name?: string
           full_name?: string
           id: string
           is_anonymous?: boolean
           kyc_id_url?: string | null
           kyc_selfie_url?: string | null
           kyc_status?: string
+          last_name?: string
           locked?: number
           phone?: string | null
           state?: string | null
@@ -290,12 +354,14 @@ export type Database = {
           created_at?: string
           dob?: string | null
           email?: string
+          first_name?: string
           full_name?: string
           id?: string
           is_anonymous?: boolean
           kyc_id_url?: string | null
           kyc_selfie_url?: string | null
           kyc_status?: string
+          last_name?: string
           locked?: number
           phone?: string | null
           state?: string | null
@@ -303,6 +369,44 @@ export type Database = {
           zip?: string | null
         }
         Relationships: []
+      }
+      report_orders: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          listing_id: string
+          report_url: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          listing_id: string
+          report_url?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          listing_id?: string
+          report_url?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_orders_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       site_settings: {
         Row: {
@@ -408,14 +512,84 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_listings: {
+        Args: never
+        Returns: {
+          bid_count: number
+          bid_visibility: string
+          created_at: string
+          current_bid: number
+          description: string | null
+          ends_at: string | null
+          id: string
+          images: string[]
+          length_ft: number | null
+          location: string | null
+          make: string | null
+          mileage: number | null
+          model: string | null
+          queue_order: number
+          report_available: boolean
+          report_price: number
+          report_url: string | null
+          rv_class: string | null
+          sleeps: number | null
+          sold_at: string | null
+          sold_price: number | null
+          starting_bid: number
+          status: string
+          title: string
+          updated_at: string
+          vin: string
+          vin_masked: string | null
+          winner_alias: string | null
+          winner_id: string | null
+          year: number | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "listings"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       admin_place_bid: {
         Args: { _alias?: string; _amount: number; _listing_id: string }
         Returns: Json
       }
       bootstrap_admin: { Args: never; Returns: string }
       close_expired_auctions: { Args: never; Returns: number }
+      create_deposit_intent: {
+        Args: { _amount: number; _currency: string }
+        Returns: {
+          address: string
+          amount: number
+          created_at: string
+          credited_at: string | null
+          currency: string
+          detected_amount: number | null
+          detected_tx: string | null
+          expires_at: string
+          id: string
+          network: string
+          qr_url: string | null
+          status: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "deposit_intents"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      credit_deposit_intent: {
+        Args: { _amount: number; _intent_id: string; _tx: string }
+        Returns: Json
+      }
       gen_alias: { Args: never; Returns: string }
       get_listing_vin: { Args: { _listing_id: string }; Returns: string }
+      grant_admin_by_email: { Args: { _email: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -423,10 +597,22 @@ export type Database = {
         }
         Returns: boolean
       }
+      listing_bids: {
+        Args: { _listing_id: string }
+        Returns: {
+          alias: string
+          amount: number
+          created_at: string
+          id: string
+          source: string
+        }[]
+      }
+      my_vehicle_report: { Args: { _listing_id: string }; Returns: Json }
       place_bid: {
         Args: { _amount: number; _listing_id: string }
         Returns: Json
       }
+      purchase_vehicle_report: { Args: { _listing_id: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "user"
