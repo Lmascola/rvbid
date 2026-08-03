@@ -105,7 +105,7 @@ export function Header() {
                 <>
                   {isAdmin && (
                     <Button variant="outline" onClick={() => { setOpen(false); router.navigate({ to: "/admin" }); }}>
-                      Admin dashboard
+                      Team back office
                     </Button>
                   )}
                   <Button variant="secondary" onClick={() => { setOpen(false); router.navigate({ to: "/dashboard" }); }}>
