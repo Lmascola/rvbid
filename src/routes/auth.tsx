@@ -57,7 +57,12 @@ function AuthPage() {
   });
   const set = (key: string, value: string) => setForm((f) => ({ ...f, [key]: value }));
 
-  const needsKyc = Boolean(user && profile && !profile.kyc_id_url);
+  const needsKyc = Boolean(
+    user &&
+      profile &&
+      profile.kyc_status !== "approved" &&
+      !(profile.kyc_id_url && profile.kyc_selfie_url),
+  );
 
   async function signIn(e: React.FormEvent) {
     e.preventDefault();
