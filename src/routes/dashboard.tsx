@@ -73,7 +73,8 @@ function Dashboard() {
     );
   }
 
-  const documentsSubmitted = Boolean(profile?.kyc_id_url && profile?.kyc_selfie_url);
+  const documentsSubmitted =
+    Boolean(profile?.kyc_id_url && profile?.kyc_selfie_url) || profile?.kyc_status === "approved";
 
   if (profile && !documentsSubmitted) {
     return (
