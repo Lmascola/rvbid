@@ -512,6 +512,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_claim_status: { Args: never; Returns: Json }
       admin_listings: {
         Args: never
         Returns: {
@@ -558,6 +559,7 @@ export type Database = {
         Returns: Json
       }
       bootstrap_admin: { Args: never; Returns: string }
+      claim_admin: { Args: never; Returns: Json }
       close_expired_auctions: { Args: never; Returns: number }
       create_deposit_intent: {
         Args: { _amount: number; _currency: string }
