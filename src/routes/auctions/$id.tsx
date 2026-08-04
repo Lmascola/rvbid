@@ -352,8 +352,8 @@ function AuctionDetail() {
           </div>
 
           <div className="panel mt-4 p-5 text-xs text-muted-foreground">
-            All RVs are used and sold as-is without warranty. We describe every unit in good faith and
-            our team will help assist with any issue that arises.
+            All units are used and known to be bank repossessions or consigned units and are sold "as
+            is" with no warranties, titles, expressed or implied.
           </div>
         </aside>
       </div>
