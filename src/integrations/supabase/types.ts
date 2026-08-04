@@ -307,6 +307,47 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          kind: string
+          listing_id: string | null
+          read_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          listing_id?: string | null
+          read_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          listing_id?: string | null
+          read_at?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           alias: string
@@ -555,8 +596,31 @@ export type Database = {
           isSetofReturn: true
         }
       }
-      admin_place_bid: {
-        Args: { _alias?: string; _amount: number; _listing_id: string }
+      admin_place_bid:
+        | {
+            Args: { _alias?: string; _amount: number; _listing_id: string }
+            Returns: Json
+          }
+        | {
+            Args: {
+              _alias?: string
+              _amount: number
+              _created_at?: string
+              _listing_id: string
+            }
+            Returns: Json
+          }
+      admin_set_close_time: {
+        Args: { _listing_id: string; _sold_at: string }
+        Returns: Json
+      }
+      admin_update_bid: {
+        Args: {
+          _alias?: string
+          _amount?: number
+          _bid_id: string
+          _created_at?: string
+        }
         Returns: Json
       }
       bootstrap_admin: { Args: never; Returns: string }
@@ -616,6 +680,10 @@ export type Database = {
         Returns: Json
       }
       purchase_vehicle_report: { Args: { _listing_id: string }; Returns: Json }
+      recompute_listing_bids: {
+        Args: { _listing_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "user"
