@@ -50,7 +50,8 @@ export function Footer() {
           <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider">Support</h4>
           <p className="text-sm text-muted-foreground">support@rvbid.com</p>
           <p className="mt-3 text-xs text-muted-foreground">
-            All RVs are used and sold as-is. Our team will help assist with any issue that arises.
+            All units are used and known to be bank repossessions or consigned units and are sold
+            "as is" with no warranties, titles, expressed or implied.
           </p>
         </div>
       </div>

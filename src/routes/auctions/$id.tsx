@@ -11,6 +11,7 @@ import {
   closeExpiredAuctions,
   db,
   LISTING_COLUMNS,
+  dateTime,
   money,
   num,
   type Bid,
@@ -270,7 +271,7 @@ function AuctionDetail() {
                   </span>
                   <span className="flex items-center justify-between gap-4 sm:justify-end">
                     <span className="text-muted-foreground">
-                      {new Date(bid.created_at).toLocaleString()}
+                      {dateTime(bid.created_at)}
                     </span>
                     <span className="font-display">{money(bid.amount)}</span>
                   </span>
@@ -296,7 +297,7 @@ function AuctionDetail() {
               <span className="text-muted-foreground">{sold ? "Closed" : "Time left"}</span>
               {sold ? (
                 <span className="font-display">
-                  {listing.sold_at ? new Date(listing.sold_at).toLocaleDateString() : "—"}
+                  {dateTime(listing.sold_at)}
                 </span>
               ) : (
                 <Countdown endsAt={listing.ends_at} />
@@ -352,8 +353,8 @@ function AuctionDetail() {
           </div>
 
           <div className="panel mt-4 p-5 text-xs text-muted-foreground">
-            All RVs are used and sold as-is without warranty. We describe every unit in good faith and
-            our team will help assist with any issue that arises.
+            All units are used and known to be bank repossessions or consigned units and are sold "as
+            is" with no warranties, titles, expressed or implied.
           </div>
         </aside>
       </div>

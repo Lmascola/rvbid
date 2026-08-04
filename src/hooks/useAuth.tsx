@@ -57,6 +57,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  // Keep wallet figures live: deposits credited by the watcher, team adjustments and
+  // released bid locks all change the profile row without any action in this tab.
+  const userId = session?.user?.id;
+  useEffect(() => {
+    if (!userId) return;
+    const timer = setInterval(() => void load(userId), 10_000);
+    const onFocus = () => void load(userId);
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    const channel = supabase
+      .channel(`profile-${userId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${userId}` },
+        () => void load(userId),
+      )
+      .subscribe();
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+      void supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
+
   return (
     <AuthContext.Provider
       value={{

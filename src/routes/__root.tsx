@@ -15,6 +15,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { ClaimAdminBanner } from "@/components/site/ClaimAdminBanner";
+import { NotificationsWatcher } from "@/components/site/NotificationsWatcher";
 
 import { Toaster } from "@/components/ui/sonner";
 
@@ -131,6 +132,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <NotificationsWatcher />
         <div className="flex min-h-screen flex-col">
           <Header />
           <ClaimAdminBanner />

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Plus, Trash2, Upload } from "lucide-react";
+import { Loader2, Pencil, Plus, Trash2, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { ClaimAdminBanner, useAdminClaimStatus } from "@/components/site/ClaimAdminBanner";
 
-import { db, money } from "@/lib/rvbid";
+import { db, dateTime, fromLocalInput, money, toLocalInput } from "@/lib/rvbid";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -55,6 +55,7 @@ const EMPTY_LISTING = {
   bid_count: "0",
   status: "live",
   ends_at: "",
+  sold_at: "",
   queue_order: "0",
   report_available: true,
   report_price: "39.00",
@@ -193,7 +194,8 @@ function ListingsPanel() {
                   queue_order: String(l.queue_order ?? 0),
                   report_price: String(l.report_price ?? "39.00"),
                   report_url: l.report_url ?? "",
-                  ends_at: l.ends_at ? new Date(l.ends_at).toISOString().slice(0, 16) : "",
+                  ends_at: toLocalInput(l.ends_at),
+                  sold_at: toLocalInput(l.sold_at),
                   images: l.images ?? [],
                   description: l.description ?? "",
                 })
@@ -283,7 +285,8 @@ function ListingEditor({
       current_bid: Number(form.current_bid || 0),
       bid_count: Number(form.bid_count || 0),
       status: form.status,
-      ends_at: form.ends_at ? new Date(form.ends_at).toISOString() : null,
+      ends_at: fromLocalInput(form.ends_at),
+      sold_at: fromLocalInput(form.sold_at),
       queue_order: Number(form.queue_order || 0),
       report_available: form.report_available,
       report_price: Number(form.report_price || 0),
@@ -296,6 +299,10 @@ function ListingEditor({
       : await db.from("listings").insert(payload);
     setBusy(false);
     if (error) { toast.error(error.message); return; }
+    if (form.id) {
+      // keeps sold_price / winner in step with the bid history after a manual edit
+      await db.rpc("recompute_listing_bids", { _listing_id: form.id });
+    }
     toast.success(form.id ? "Listing updated." : "Listing created.");
     onSaved();
     if (!form.id) onClose();
@@ -353,8 +360,11 @@ function ListingEditor({
             {["live", "queued", "sold", "draft"].map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         </F>
-        <F label="Ends at">
+        <F label="Ends at (your local time)">
           <Input type="datetime-local" value={form.ends_at} onChange={(e) => set("ends_at", e.target.value)} />
+        </F>
+        <F label="Closed at — sold listings (your local time)">
+          <Input type="datetime-local" value={form.sold_at} onChange={(e) => set("sold_at", e.target.value)} />
         </F>
         <F label="Visible bidders (sold listings)">
           <select
@@ -426,6 +436,7 @@ function BidsPanel() {
   const [amount, setAmount] = useState("");
   const [alias, setAlias] = useState("");
   const [anonymous, setAnonymous] = useState(true);
+  const [placedAt, setPlacedAt] = useState("");
   const [busy, setBusy] = useState(false);
 
   const bids = useQuery({
@@ -436,7 +447,7 @@ function BidsPanel() {
         .from("bids")
         .select("*")
         .eq("listing_id", listingId)
-        .order("amount", { ascending: false });
+        .order("created_at", { ascending: true });
       return (data ?? []) as any[];
     },
   });
@@ -480,6 +491,9 @@ function BidsPanel() {
             <Input value={alias} onChange={(e) => setAlias(e.target.value)} placeholder="e.g. Marcus D." />
           </F>
         )}
+        <F label="Placed at (your local time — blank = now)">
+          <Input type="datetime-local" value={placedAt} onChange={(e) => setPlacedAt(e.target.value)} />
+        </F>
         <Button
           disabled={busy}
           onClick={async () => {
@@ -490,12 +504,14 @@ function BidsPanel() {
               _listing_id: listingId,
               _amount: Number(amount),
               _alias: anonymous ? null : alias.trim(),
+              _created_at: fromLocalInput(placedAt),
             });
             setBusy(false);
             if (error) { toast.error(error.message.replace(/^.*?:\s*/, "")); return; }
             toast.success(`Bid posted as ${data?.alias ?? "anonymous tag"}.`);
             setAmount("");
             setAlias("");
+            setPlacedAt("");
             void bids.refetch();
             void listings.refetch();
           }}
@@ -514,34 +530,94 @@ function BidsPanel() {
               <p className="p-4 text-sm text-muted-foreground">No bids yet.</p>
             )}
             {(bids.data ?? []).map((b) => (
-              <div key={b.id} className="flex items-center justify-between gap-3 p-3 text-sm">
-                <span>
-                  <span className="font-mono">{b.alias}</span>
-                  <span className="ml-2 text-xs text-muted-foreground">
-                    {b.source} · {new Date(b.created_at).toLocaleString()}
-                  </span>
-                </span>
-                <span className="flex items-center gap-3">
-                  <span className="font-display">{money(b.amount)}</span>
-                  <button
-                    type="button"
-                    aria-label="Delete bid"
-                    onClick={async () => {
-                      if (!confirm(`Delete this ${money(b.amount)} bid?`)) return;
-                      const { error } = await db.rpc("admin_delete_bid", { _bid_id: b.id });
-                      if (error) { toast.error(error.message.replace(/^.*?:\s*/, "")); return; }
-                      toast.success("Bid deleted — current bid recalculated.");
-                      void bids.refetch();
-                      void listings.refetch();
-                    }}
-                  >
-                    <Trash2 className="size-3.5 text-muted-foreground" />
-                  </button>
-                </span>
-              </div>
+              <BidRow
+                key={b.id}
+                bid={b}
+                onChanged={() => {
+                  void bids.refetch();
+                  void listings.refetch();
+                }}
+              />
             ))}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function BidRow({ bid, onChanged }: { bid: any; onChanged: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [amount, setAmount] = useState(String(bid.amount ?? ""));
+  const [alias, setAlias] = useState(bid.alias ?? "");
+  const [when, setWhen] = useState(toLocalInput(bid.created_at));
+  const [busy, setBusy] = useState(false);
+
+  if (!editing) {
+    return (
+      <div className="flex items-center justify-between gap-3 p-3 text-sm">
+        <span className="min-w-0">
+          <span className="font-mono">{bid.alias}</span>
+          <span className="ml-2 text-xs text-muted-foreground">
+            {bid.source} · {dateTime(bid.created_at)}
+          </span>
+        </span>
+        <span className="flex items-center gap-3">
+          <span className="font-display">{money(bid.amount)}</span>
+          <button type="button" aria-label="Edit bid" onClick={() => setEditing(true)}>
+            <Pencil className="size-3.5 text-muted-foreground" />
+          </button>
+          <button
+            type="button"
+            aria-label="Delete bid"
+            onClick={async () => {
+              if (!confirm(`Delete this ${money(bid.amount)} bid?`)) return;
+              const { error } = await db.rpc("admin_delete_bid", { _bid_id: bid.id });
+              if (error) { toast.error(error.message.replace(/^.*?:\s*/, "")); return; }
+              toast.success("Bid deleted — current bid and winner recalculated.");
+              onChanged();
+            }}
+          >
+            <Trash2 className="size-3.5 text-muted-foreground" />
+          </button>
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2 bg-secondary/40 p-3">
+      <div className="grid gap-2 sm:grid-cols-3">
+        <F label="Amount"><Input value={amount} onChange={(e) => setAmount(e.target.value)} /></F>
+        <F label="Bidder shown">
+          <Input value={alias} onChange={(e) => setAlias(e.target.value)} placeholder="X6521 or a real name" />
+        </F>
+        <F label="Placed at (your local time)">
+          <Input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} />
+        </F>
+      </div>
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            const { error } = await db.rpc("admin_update_bid", {
+              _bid_id: bid.id,
+              _amount: Number(amount),
+              _alias: alias.trim() || null,
+              _created_at: fromLocalInput(when),
+            });
+            setBusy(false);
+            if (error) { toast.error(error.message.replace(/^.*?:\s*/, "")); return; }
+            toast.success("Bid updated — current bid and winner recalculated.");
+            setEditing(false);
+            onChanged();
+          }}
+        >
+          Save bid
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => setEditing(false)}>Cancel</Button>
       </div>
     </div>
   );
