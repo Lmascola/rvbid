@@ -674,6 +674,7 @@ export type Database = {
           source: string
         }[]
       }
+      locked_for_user: { Args: { _user_id: string }; Returns: number }
       my_vehicle_report: { Args: { _listing_id: string }; Returns: Json }
       place_bid: {
         Args: { _amount: number; _listing_id: string }
@@ -684,6 +685,11 @@ export type Database = {
         Args: { _listing_id: string }
         Returns: undefined
       }
+      sync_locked_for_listing: {
+        Args: { _listing_id: string }
+        Returns: undefined
+      }
+      sync_locked_funds: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"
