@@ -270,7 +270,7 @@ function AuctionDetail() {
                   </span>
                   <span className="flex items-center justify-between gap-4 sm:justify-end">
                     <span className="text-muted-foreground">
-                      {new Date(bid.created_at).toLocaleString()}
+                      {dateTime(bid.created_at)}
                     </span>
                     <span className="font-display">{money(bid.amount)}</span>
                   </span>
@@ -296,7 +296,7 @@ function AuctionDetail() {
               <span className="text-muted-foreground">{sold ? "Closed" : "Time left"}</span>
               {sold ? (
                 <span className="font-display">
-                  {listing.sold_at ? new Date(listing.sold_at).toLocaleDateString() : "—"}
+                  {dateTime(listing.sold_at)}
                 </span>
               ) : (
                 <Countdown endsAt={listing.ends_at} />
