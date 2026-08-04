@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { KycUpload } from "@/components/site/KycUpload";
 import { useAuth } from "@/hooks/useAuth";
-import { db, money } from "@/lib/rvbid";
+import { dateTime, db, money } from "@/lib/rvbid";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -172,7 +172,7 @@ function Dashboard() {
             title="Deposit history"
             rows={data?.deposits ?? []}
             columns={[
-              { key: "created_at", label: "Date", format: (v) => new Date(v).toLocaleString() },
+              { key: "created_at", label: "Date", format: (v) => dateTime(v) },
               { key: "amount", label: "Amount", format: (v) => money(v) },
               { key: "currency", label: "Asset" },
               { key: "status", label: "Status" },
@@ -200,7 +200,7 @@ function Dashboard() {
             title="Withdrawal history"
             rows={data?.withdrawals ?? []}
             columns={[
-              { key: "created_at", label: "Date", format: (v) => new Date(v).toLocaleString() },
+              { key: "created_at", label: "Date", format: (v) => dateTime(v) },
               { key: "amount", label: "Amount", format: (v) => money(v) },
               { key: "destination", label: "Destination" },
               { key: "status", label: "Status" },
@@ -223,7 +223,7 @@ function Dashboard() {
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-medium">{bid.listings?.title}</span>
                   <span className="text-xs text-muted-foreground">
-                    {new Date(bid.created_at).toLocaleString()} · {bid.listings?.status}
+                    {dateTime(bid.created_at)} · {bid.listings?.status}
                   </span>
                 </span>
                 <span className="font-display text-primary">{money(bid.amount)}</span>
@@ -245,7 +245,7 @@ function Dashboard() {
             title="Wallet transactions"
             rows={data?.transactions ?? []}
             columns={[
-              { key: "created_at", label: "Date", format: (v) => new Date(v).toLocaleString() },
+              { key: "created_at", label: "Date", format: (v) => dateTime(v) },
               { key: "kind", label: "Type" },
               { key: "amount", label: "Amount", format: (v) => money(v) },
               { key: "description", label: "Details" },
@@ -440,7 +440,7 @@ function DepositFlow({ onChanged }: { onChanged: () => void }) {
       </div>
       <div className="flex items-end">
         <Button type="submit" disabled={busy} className="w-full">
-          <Send className="size-4" /> {busy ? "Starting…" : "Send"}
+          <Send className="size-4" /> {busy ? "Starting…" : "Deposit"}
         </Button>
       </div>
     </form>

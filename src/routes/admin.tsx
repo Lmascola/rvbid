@@ -55,6 +55,7 @@ const EMPTY_LISTING = {
   bid_count: "0",
   status: "live",
   ends_at: "",
+  sold_at: "",
   queue_order: "0",
   report_available: true,
   report_price: "39.00",
@@ -193,7 +194,8 @@ function ListingsPanel() {
                   queue_order: String(l.queue_order ?? 0),
                   report_price: String(l.report_price ?? "39.00"),
                   report_url: l.report_url ?? "",
-                  ends_at: l.ends_at ? new Date(l.ends_at).toISOString().slice(0, 16) : "",
+                  ends_at: toLocalInput(l.ends_at),
+                  sold_at: toLocalInput(l.sold_at),
                   images: l.images ?? [],
                   description: l.description ?? "",
                 })
@@ -283,7 +285,8 @@ function ListingEditor({
       current_bid: Number(form.current_bid || 0),
       bid_count: Number(form.bid_count || 0),
       status: form.status,
-      ends_at: form.ends_at ? new Date(form.ends_at).toISOString() : null,
+      ends_at: fromLocalInput(form.ends_at),
+      sold_at: fromLocalInput(form.sold_at),
       queue_order: Number(form.queue_order || 0),
       report_available: form.report_available,
       report_price: Number(form.report_price || 0),
@@ -353,8 +356,11 @@ function ListingEditor({
             {["live", "queued", "sold", "draft"].map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         </F>
-        <F label="Ends at">
+        <F label="Ends at (your local time)">
           <Input type="datetime-local" value={form.ends_at} onChange={(e) => set("ends_at", e.target.value)} />
+        </F>
+        <F label="Closed at — sold listings (your local time)">
+          <Input type="datetime-local" value={form.sold_at} onChange={(e) => set("sold_at", e.target.value)} />
         </F>
         <F label="Visible bidders (sold listings)">
           <select
