@@ -154,10 +154,11 @@ function Dashboard() {
           <div className="panel p-5">
             <h2 className="font-display text-lg">Fund your wallet</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Enter an amount and press Send — we'll show you the deposit address our team assigned
-              and watch the network for your transfer. Your balance updates automatically once the
-              transaction is detected; there is nothing to paste or submit.
+              Enter an amount and Click Deposit— we'll show you the designated deposit address
+              assigned to your account. Your balance updates automatically once the transaction is
+              detected.
             </p>
+
             {!approved ? (
               <p className="mt-4 rounded-md border border-border bg-secondary p-4 text-sm text-muted-foreground">
                 Wallet funding unlocks after our team approves your ID verification. Deposit addresses
