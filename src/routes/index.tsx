@@ -89,16 +89,13 @@ function Home() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/85 to-background" />
         <div className="relative mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground backdrop-blur">
-            <span className="live-dot" aria-hidden /> 12-hour Fast Fingers auctions
-          </span>
-          <h1 className="mt-5 max-w-3xl font-display text-4xl font-extrabold leading-[1.05] sm:text-6xl">
-            Used RVs that open at{" "}
-            <span className="text-gradient-gold">$0</span> and close in 12 hours.
+          <h1 className="max-w-3xl font-display text-4xl font-extrabold leading-[1.05] sm:text-6xl">
+            Bank-Repossessed RV Auctions. Every Listing Starts at{" "}
+            <span className="text-gradient-gold">$0</span>.
           </h1>
-          <p className="mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">
-            Every RVBID auction starts at zero. Fund your wallet, verify once, and bid against the
-            clock — anonymously if you prefer.
+          <p className="mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
+            Browse used RVs from live no-reserve price auctions. Every listing closes in 12 hours.
+            Inspect the details, place your bids, and compete until the timer ends.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button size="lg" asChild>
