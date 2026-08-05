@@ -350,6 +350,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
           alias: string
           balance: number
           created_at: string
@@ -370,6 +371,7 @@ export type Database = {
           zip: string | null
         }
         Insert: {
+          address?: string | null
           alias: string
           balance?: number
           created_at?: string
@@ -390,6 +392,7 @@ export type Database = {
           zip?: string | null
         }
         Update: {
+          address?: string | null
           alias?: string
           balance?: number
           created_at?: string

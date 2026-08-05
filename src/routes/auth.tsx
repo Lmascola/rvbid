@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { signInWithGoogle } from "@/lib/google-auth";
+import { getAuthConfig } from "@/lib/auth-config.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,7 +21,7 @@ export const Route = createFileRoute("/auth")({
       {
         name: "description",
         content:
-          "Create an RVBID account with email or Google, verify your identity and fund your wallet to bid on used RV auctions.",
+          "Create an RVBID account with your email, verify your email and identity, then fund your wallet to bid on used RV auctions.",
       },
       { property: "og:title", content: "Sign In or Register | RVBID" },
       { property: "og:description", content: "Join RVBID to bid on used RV auctions from $0." },
@@ -38,18 +38,34 @@ const STATES = [
   "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
 ];
 
+type PendingProfile = {
+  full_name: string;
+  first_name: string;
+  last_name: string;
+  dob: string;
+  phone: string;
+  address: string;
+  state: string;
+  zip: string;
+  email: string;
+};
+
 function AuthPage() {
   const { mode } = Route.useSearch();
   const router = useRouter();
   const { user, profile, refreshProfile } = useAuth();
   const [tab, setTab] = useState<"signin" | "signup">(mode ?? "signin");
   const [busy, setBusy] = useState(false);
+  const [verificationRequired, setVerificationRequired] = useState(true);
+  const [pending, setPending] = useState<PendingProfile | null>(null);
+  const [code, setCode] = useState("");
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
     dob: "",
     email: "",
     phone: "",
+    address: "",
     state: "",
     zip: "",
     password: "",
@@ -57,12 +73,36 @@ function AuthPage() {
   });
   const set = (key: string, value: string) => setForm((f) => ({ ...f, [key]: value }));
 
+  useEffect(() => {
+    getAuthConfig()
+      .then((cfg) => setVerificationRequired(cfg.emailVerificationRequired))
+      .catch(() => setVerificationRequired(true));
+  }, []);
+
   const needsKyc = Boolean(
     user &&
       profile &&
       profile.kyc_status !== "approved" &&
       !(profile.kyc_id_url && profile.kyc_selfie_url),
   );
+
+  async function applyPendingProfile(userId: string, details: PendingProfile) {
+    await db
+      .from("profiles")
+      .update({
+        full_name: details.full_name,
+        first_name: details.first_name,
+        last_name: details.last_name,
+        dob: details.dob,
+        phone: details.phone,
+        address: details.address,
+        state: details.state,
+        zip: details.zip,
+        email: details.email,
+      })
+      .eq("id", userId);
+    await refreshProfile();
+  }
 
   async function signIn(e: React.FormEvent) {
     e.preventDefault();
@@ -77,9 +117,24 @@ function AuthPage() {
     router.navigate({ to: "/dashboard" });
   }
 
+  async function forgotPassword() {
+    const email = form.email.trim();
+    if (!email) { toast.error("Enter your email address first."); return; }
+    setBusy(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Password reset email sent — check your inbox.");
+  }
+
   async function signUp(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.first_name || !form.last_name || !form.dob || !form.email || !form.phone || !form.state || !form.zip) {
+    if (
+      !form.first_name || !form.last_name || !form.dob || !form.email ||
+      !form.phone || !form.address || !form.state || !form.zip
+    ) {
       toast.error("Please complete every field."); return;
     }
     if (!passwordIsStrong(form.password)) {
@@ -88,62 +143,117 @@ function AuthPage() {
     if (form.password !== form.confirm) {
       toast.error("Your passwords don't match."); return;
     }
-    const fullName = `${form.first_name.trim()} ${form.last_name.trim()}`;
+    const details: PendingProfile = {
+      full_name: `${form.first_name.trim()} ${form.last_name.trim()}`,
+      first_name: form.first_name.trim(),
+      last_name: form.last_name.trim(),
+      dob: form.dob,
+      phone: form.phone.trim(),
+      address: form.address.trim(),
+      state: form.state,
+      zip: form.zip.trim(),
+      email: form.email.trim(),
+    };
     setBusy(true);
     const { data, error } = await supabase.auth.signUp({
-      email: form.email.trim(),
+      email: details.email,
       password: form.password,
       options: {
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: `${window.location.origin}/auth`,
         data: {
-          full_name: fullName,
-          first_name: form.first_name.trim(),
-          last_name: form.last_name.trim(),
+          full_name: details.full_name,
+          first_name: details.first_name,
+          last_name: details.last_name,
         },
       },
     });
-    if (error) {
-      setBusy(false);
-      toast.error(error.message); return;
-    }
-    if (data.user) {
-      await db
-        .from("profiles")
-        .update({
-          full_name: fullName,
-          first_name: form.first_name.trim(),
-          last_name: form.last_name.trim(),
-          dob: form.dob,
-          phone: form.phone,
-          state: form.state,
-          zip: form.zip,
-          email: form.email.trim(),
-        })
-        .eq("id", data.user.id);
-      await refreshProfile();
-    }
     setBusy(false);
-    toast.success("Account created — now upload your ID and selfie.");
+    if (error) { toast.error(error.message); return; }
+
+    // With email verification on, signUp returns no session: the account is not
+    // active until the 6-digit code from the email is confirmed.
+    if (data.session?.user) {
+      await applyPendingProfile(data.session.user.id, details);
+      toast.success("Account created — now upload your ID and selfie.");
+      return;
+    }
+    if (verificationRequired) {
+      setPending(details);
+      setCode("");
+      toast.success("We emailed you a 6-digit verification code.");
+      return;
+    }
+    toast.success("Account created. Confirm your email, then sign in to continue.");
+    setTab("signin");
   }
 
-  async function googleSignIn() {
-    const result = await signInWithGoogle();
+  async function verifyCode(e: React.FormEvent) {
+    e.preventDefault();
+    if (!pending) return;
+    if (code.trim().length !== 6) { toast.error("Enter the 6-digit code from your email."); return; }
+    setBusy(true);
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: pending.email,
+      token: code.trim(),
+      type: "signup",
+    });
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    if (data.user) await applyPendingProfile(data.user.id, pending);
+    setPending(null);
+    toast.success("Email verified — now upload your ID and selfie.");
+  }
 
-    if (result.error) { toast.error("Google sign-in failed. Try email instead."); return; }
-    if (result.redirected) return;
-    await refreshProfile();
-    router.navigate({ to: "/dashboard" });
+  async function resendCode() {
+    if (!pending) return;
+    setBusy(true);
+    const { error } = await supabase.auth.resend({ type: "signup", email: pending.email });
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("New code sent.");
+  }
+
+  if (pending && !user) {
+    return (
+      <div className="mx-auto w-full max-w-md px-4 py-12 sm:px-6">
+        <p className="text-xs font-semibold uppercase tracking-widest text-primary">Step 2 of 3</p>
+        <h1 className="mt-2 font-display text-3xl">Verify your email</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          We sent a 6-digit code to <span className="text-foreground">{pending.email}</span>. Enter it
+          below to activate your account and continue to identity verification.
+        </p>
+        <form onSubmit={verifyCode} className="panel mt-6 space-y-4 p-5">
+          <Field label="6-digit code">
+            <Input
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+              className="text-center font-mono text-lg tracking-[0.5em]"
+              required
+            />
+          </Field>
+          <Button type="submit" className="w-full" disabled={busy || code.length !== 6}>
+            {busy ? "Verifying…" : "Verify email"}
+          </Button>
+          <Button type="button" variant="outline" className="w-full" onClick={resendCode} disabled={busy}>
+            Resend code
+          </Button>
+        </form>
+      </div>
+    );
   }
 
   if (needsKyc) {
     return (
       <div className="mx-auto w-full max-w-lg px-4 py-12 sm:px-6">
-        <p className="text-xs font-semibold uppercase tracking-widest text-primary">Step 2 of 2</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-primary">Final step</p>
         <h1 className="mt-2 font-display text-3xl">Verify your identity</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Identity verification is mandatory before your account is activated — this applies whether
-          you signed up with email or Google. Upload a government-issued ID and a selfie to continue;
-          your dashboard opens as soon as they're submitted, while our team reviews them.
+          Identity verification is mandatory before your account is activated. Upload a
+          government-issued ID and a selfie to continue; your dashboard opens as soon as they're
+          submitted, while our team reviews them.
         </p>
         <div className="panel mt-6 p-5">
           <KycUpload onDone={() => router.navigate({ to: "/dashboard" })} />
@@ -196,20 +306,18 @@ function AuthPage() {
             <Button type="submit" className="w-full" disabled={busy}>
               {busy ? "Signing in…" : "Sign in"}
             </Button>
-            <Button type="button" variant="outline" className="w-full" onClick={googleSignIn}>
-              Continue with Google
-            </Button>
+            <button
+              type="button"
+              onClick={forgotPassword}
+              className="w-full text-center text-xs text-muted-foreground underline"
+            >
+              Forgot password?
+            </button>
           </form>
         ) : (
           <form onSubmit={signUp} className="space-y-4">
-            <p className="text-xs font-semibold uppercase tracking-widest text-primary">Step 1 of 2</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary">Step 1 of 3</p>
             <h1 className="font-display text-2xl">Create your RVBID account</h1>
-            <Button type="button" variant="outline" className="w-full" onClick={googleSignIn}>
-              Sign up with Google
-            </Button>
-            <p className="text-center text-[11px] uppercase tracking-widest text-muted-foreground">
-              or use your email
-            </p>
             <div className="grid grid-cols-2 gap-3">
               <Field label="First name">
                 <Input value={form.first_name} onChange={(e) => set("first_name", e.target.value)} required />
@@ -226,6 +334,9 @@ function AuthPage() {
             </Field>
             <Field label="Phone">
               <Input type="tel" autoComplete="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} required />
+            </Field>
+            <Field label="Address">
+              <Input autoComplete="street-address" value={form.address} onChange={(e) => set("address", e.target.value)} required />
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="State">
@@ -273,13 +384,13 @@ function AuthPage() {
               className="w-full"
               disabled={busy || !passwordIsStrong(form.password) || form.password !== form.confirm}
             >
-              {busy ? "Creating account…" : "Continue to ID verification"}
+              {busy ? "Creating account…" : verificationRequired ? "Continue to email verification" : "Continue to ID verification"}
             </Button>
             <p className="text-[11px] text-muted-foreground">
               By continuing you agree to our{" "}
               <Link to="/legal/$slug" params={{ slug: "terms" }} className="underline">Terms</Link> and{" "}
               <Link to="/legal/$slug" params={{ slug: "privacy" }} className="underline">Privacy Policy</Link>.
-              Identity verification is required before bidding or funding a wallet.
+              Email and identity verification are required before bidding or funding a wallet.
             </p>
           </form>
         )}
