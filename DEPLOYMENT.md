@@ -15,7 +15,7 @@ your own Supabase (managed supabase.com project or self-hosted Supabase stack).
 | Build tooling `@lovable.dev/vite-tanstack-config` | ✅ Portable | Public npm package (dev dependency only, wraps standard TanStack/Vite/Tailwind plugins). No network calls at runtime. |
 | Database + all business logic | ✅ Portable | Everything lives in SQL migrations in `supabase/migrations/` (tables, RLS, `place_bid`, `close_expired_auctions`, `claim_admin`, deposits, reports). Apply them to your own project. |
 | Auth (email + password) | ✅ Portable | Plain Supabase Auth. Configure your own SMTP for confirmation/reset emails. |
-| Auth (Google) | ✅ Portable **(changed)** | Previously it always used the Lovable OAuth broker. Now `src/lib/google-auth.ts` calls `supabase.auth.signInWithOAuth` directly when `VITE_SELF_HOSTED=true`; you configure Google in your own Supabase Auth providers. |
+| Auth (Google) | ❌ Removed | Google OAuth (code, UI, dependency, provider config) has been removed. Email + password is the only login method. |
 | Admin roles / Claim Admin | ✅ Portable | `user_roles` + `has_role` + `claim_admin`/`admin_claim_status` SQL functions. On a fresh database the first registered account claims admin in the UI. |
 | Auctions, bidding, wallets, VIN reports | ✅ Portable | Pure Postgres functions called over the Data API. |
 | Uploads (KYC docs, RV photos) | ✅ Portable | Private Supabase Storage buckets `kyc-documents` and `rv-photos`; you must create both on the new project. |
@@ -39,9 +39,14 @@ your own Supabase (managed supabase.com project or self-hosted Supabase stack).
    ```
    Or paste each file in `supabase/migrations/` (ascending filename order) into the SQL editor.
 3. Storage → create private buckets **`kyc-documents`** and **`rv-photos`**.
-4. Auth → Providers: enable Email; enable Google and paste your Google OAuth client
-   ID/secret. Add redirect URLs `https://rvbid.com/auth` and `https://rvbid.com`.
-5. Auth → SMTP: add your mail provider so signup/reset emails send.
+4. Auth → Providers: enable **Email** only (no social providers are used). Add
+   redirect URLs `https://<your-domain>/auth` and `https://<your-domain>/reset-password`.
+5. Auth → SMTP: add your mail provider (same values as `SMTP_*` in `.env`) and set
+   the sender address to `EMAIL_FROM_AUTH` (e.g. `noreply@rvbidlive.com`) so
+   verification codes and password resets come from your own domain.
+6. Auth → Email templates → **Confirm signup**: the app verifies a 6-digit code,
+   so the template body must include `{{ .Token }}` (e.g. "Your RVBID
+   verification code is {{ .Token }}"). Leave **Confirm email** enabled.
 6. **Migrating existing data** (optional): export from the old database and import:
    ```bash
    pg_dump "$OLD_DB_URL" --data-only --schema=public --schema=auth > data.sql
@@ -132,7 +137,9 @@ jobs:
 - [ ] Supabase project created; **all** files in `supabase/migrations/` applied in order
 - [ ] Private buckets `kyc-documents` and `rv-photos` created
 - [ ] Email provider (SMTP) configured in Supabase Auth
-- [ ] Google OAuth client created; client ID/secret in Supabase; redirect URLs include your domain
+- [ ] Supabase Auth: Email provider enabled, confirm-email on, `{{ .Token }}` in the Confirm signup template
+- [ ] `EMAIL_FROM_AUTH`, `EMAIL_FROM_NOTIFICATIONS`, `EMAIL_FROM_NAME`, `SMTP_*` and `EMAIL_VERIFICATION_REQUIRED` set in `.env` (copy `.env.example`)
+- [ ] Redirect URL allow-list includes `/auth` and `/reset-password`; password reset email tested
 - [ ] `.env` complete, `VITE_SELF_HOSTED=true`, `chmod 600`, not committed
 - [ ] `SUPABASE_SERVICE_ROLE_KEY` present server-side only (never a `VITE_` name)
 - [ ] `CRON_SECRET` set and used by whichever scheduler you chose
@@ -146,3 +153,25 @@ jobs:
 - [ ] `ETHERSCAN_API_KEY` set if you accept ETH/ERC-20
 - [ ] Backups scheduled for your Postgres (`pg_dump` cron or provider backups) and repo mirrored
 - [ ] Firewall: only 22/80/443 open; logs checked with `docker compose logs -f app`
+
+---
+
+## 6. Email configuration variables
+
+All email behaviour is environment-driven — nothing is hardcoded. Copy
+`.env.example` to `.env` and fill these in:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `EMAIL_VERIFICATION_REQUIRED` | `true` | Server-side only. `true` = new registrations must confirm a 6-digit email code before the mandatory Identity Verification (KYC) step; `false` = skip straight to KYC. Change the value and restart the container — no code changes. |
+| `EMAIL_FROM_AUTH` | `noreply@rvbidlive.com` | Sender for authentication email (verification codes, password resets). Mirror it in Supabase Auth → SMTP sender. |
+| `EMAIL_FROM_NOTIFICATIONS` | `support@rvbidlive.com` | Sender for notification email (outbid alerts, KYC approval/rejection, deposit confirmations, withdrawal status, future account notices). |
+| `EMAIL_FROM_NAME` | `RVBID` | Display name shown in inboxes. |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_SECURE` | — | Your mail provider credentials. Auth emails are sent by Supabase Auth, so enter the same values under Supabase → Authentication → SMTP Settings. |
+| `APP_URL` | — | Public site URL used in email links and reset redirects. |
+
+Authentication email flow: registration form → 6-digit code emailed from
+`EMAIL_FROM_AUTH` → code confirmed in-app → mandatory Identity Verification
+(KYC) page → dashboard with "Pending verification" until the team approves.
+"Forgot password?" on the sign-in page sends a reset link to
+`/reset-password` through the same SMTP configuration.
