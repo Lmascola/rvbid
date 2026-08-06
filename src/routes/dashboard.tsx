@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { KycUpload } from "@/components/site/KycUpload";
 import { useAuth } from "@/hooks/useAuth";
-import { dateTime, db, money } from "@/lib/rvbid";
+import { dateTime, db, money, PASSWORD_RULES, passwordIsStrong } from "@/lib/rvbid";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
