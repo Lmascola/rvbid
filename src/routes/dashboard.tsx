@@ -139,7 +139,7 @@ function Dashboard() {
       )}
 
       <Tabs defaultValue="deposits" className="mt-8">
-        <TabsList className="flex w-full flex-wrap justify-start gap-1">
+        <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
           <TabsTrigger value="deposits">Deposits</TabsTrigger>
           <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
           <TabsTrigger value="bids">My bids</TabsTrigger>
