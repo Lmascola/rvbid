@@ -840,7 +840,7 @@ function WalletsPanel() {
 /* ---------------------------------- Crypto --------------------------------- */
 
 function CryptoPanel() {
-  const [form, setForm] = useState({ currency: "USDT", network: "TRC20", address: "", qr_url: "" });
+  const [form, setForm] = useState({ currency: "USDT", network: "TRC20", address: "", qr_url: "", user_id: "" });
   const [uploading, setUploading] = useState(false);
   const addresses = useQuery({
     queryKey: ["admin-addresses"],
@@ -849,14 +849,44 @@ function CryptoPanel() {
       return (data ?? []) as any[];
     },
   });
+  const members = useQuery({
+    queryKey: ["admin-address-members"],
+    queryFn: async () => {
+      const { data } = await db
+        .from("profiles")
+        .select("id,full_name,email,alias")
+        .order("created_at", { ascending: false });
+      return (data ?? []) as any[];
+    },
+  });
+  const memberLabel = (id: string | null) => {
+    if (!id) return "All members (shared default)";
+    const m = (members.data ?? []).find((p) => p.id === id);
+    return m ? `${m.full_name || m.alias} · ${m.email}` : "Specific member";
+  };
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <div className="panel space-y-3 p-5">
         <h2 className="text-sm font-semibold">Add a deposit address</h2>
         <p className="text-xs text-muted-foreground">
-          Verified, approved members are given these addresses automatically when they start a deposit.
+          Leave the member set to “All members” for a shared address, or pick one member to give them their
+          own address and QR for that asset and network. A member-specific address always wins over the shared one.
         </p>
+        <F label="Assign to">
+          <select
+            value={form.user_id}
+            onChange={(e) => setForm({ ...form, user_id: e.target.value })}
+            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+          >
+            <option value="">All members (shared default)</option>
+            {(members.data ?? []).map((m) => (
+              <option key={m.id} value={m.id}>
+                {(m.full_name || m.alias)} · {m.email}
+              </option>
+            ))}
+          </select>
+        </F>
         <F label="Asset">
           <select
             value={form.currency}
@@ -868,6 +898,7 @@ function CryptoPanel() {
         </F>
         <F label="Network"><Input value={form.network} onChange={(e) => setForm({ ...form, network: e.target.value })} /></F>
         <F label="Address"><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></F>
+
         <div>
           <Label className="text-xs uppercase tracking-wider text-muted-foreground">QR code image</Label>
           <label className="mt-1.5 inline-flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-2 text-xs">
@@ -898,10 +929,17 @@ function CryptoPanel() {
         <Button
           onClick={async () => {
             if (!form.address.trim()) { toast.error("Paste the wallet address."); return; }
-            const { error } = await db.from("deposit_addresses").insert({ ...form, active: true });
+            const { error } = await db.from("deposit_addresses").insert({
+              currency: form.currency,
+              network: form.network,
+              address: form.address.trim(),
+              qr_url: form.qr_url,
+              user_id: form.user_id || null,
+              active: true,
+            });
             if (error) { toast.error(error.message); return; }
             toast.success("Deposit address saved.");
-            setForm({ currency: "USDT", network: "TRC20", address: "", qr_url: "" });
+            setForm({ currency: "USDT", network: "TRC20", address: "", qr_url: "", user_id: "" });
             void addresses.refetch();
           }}
         >
@@ -914,8 +952,10 @@ function CryptoPanel() {
           <div key={a.id} className="flex items-center justify-between gap-3 p-4 text-sm">
             <span className="min-w-0">
               <span className="font-semibold">{a.currency} · {a.network}</span>
+              <span className="block text-[11px] text-muted-foreground">{memberLabel(a.user_id ?? null)}</span>
               <span className="block break-all font-mono text-[11px] text-muted-foreground">{a.address}</span>
             </span>
+
             <span className="flex items-center gap-2">
               <Switch
                 checked={a.active}
