@@ -61,6 +61,7 @@ export type Database = {
           id: string
           network: string
           qr_url: string | null
+          user_id: string | null
         }
         Insert: {
           active?: boolean
@@ -70,6 +71,7 @@ export type Database = {
           id?: string
           network?: string
           qr_url?: string | null
+          user_id?: string | null
         }
         Update: {
           active?: boolean
@@ -79,6 +81,7 @@ export type Database = {
           id?: string
           network?: string
           qr_url?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
