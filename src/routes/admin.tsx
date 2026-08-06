@@ -929,10 +929,17 @@ function CryptoPanel() {
         <Button
           onClick={async () => {
             if (!form.address.trim()) { toast.error("Paste the wallet address."); return; }
-            const { error } = await db.from("deposit_addresses").insert({ ...form, active: true });
+            const { error } = await db.from("deposit_addresses").insert({
+              currency: form.currency,
+              network: form.network,
+              address: form.address.trim(),
+              qr_url: form.qr_url,
+              user_id: form.user_id || null,
+              active: true,
+            });
             if (error) { toast.error(error.message); return; }
             toast.success("Deposit address saved.");
-            setForm({ currency: "USDT", network: "TRC20", address: "", qr_url: "" });
+            setForm({ currency: "USDT", network: "TRC20", address: "", qr_url: "", user_id: "" });
             void addresses.refetch();
           }}
         >
@@ -945,8 +952,10 @@ function CryptoPanel() {
           <div key={a.id} className="flex items-center justify-between gap-3 p-4 text-sm">
             <span className="min-w-0">
               <span className="font-semibold">{a.currency} · {a.network}</span>
+              <span className="block text-[11px] text-muted-foreground">{memberLabel(a.user_id ?? null)}</span>
               <span className="block break-all font-mono text-[11px] text-muted-foreground">{a.address}</span>
             </span>
+
             <span className="flex items-center gap-2">
               <Switch
                 checked={a.active}
