@@ -68,6 +68,8 @@ export type Profile = {
   phone: string | null;
   state: string | null;
   zip: string | null;
+  address: string | null;
+
   alias: string;
   is_anonymous: boolean;
   kyc_status: string;
