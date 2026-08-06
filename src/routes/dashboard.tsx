@@ -517,11 +517,10 @@ function WithdrawForm({ available, onSaved }: { available: number; onSaved: () =
 function ProfileForm() {
   const { user, profile, refreshProfile } = useAuth();
   const [form, setForm] = useState({
-    full_name: profile?.full_name ?? "",
     phone: profile?.phone ?? "",
+    address: profile?.address ?? "",
     state: profile?.state ?? "",
     zip: profile?.zip ?? "",
-    dob: profile?.dob ?? "",
   });
   const [busy, setBusy] = useState(false);
 
@@ -543,15 +542,19 @@ function ProfileForm() {
     >
       <div className="space-y-1.5 sm:col-span-2">
         <Label className="text-xs uppercase tracking-wider text-muted-foreground">Full name</Label>
-        <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
+        <Input value={profile?.full_name ?? ""} disabled />
       </div>
       <div className="space-y-1.5">
         <Label className="text-xs uppercase tracking-wider text-muted-foreground">Date of birth</Label>
-        <Input type="date" value={form.dob ?? ""} onChange={(e) => setForm({ ...form, dob: e.target.value })} />
+        <Input value={profile?.dob ?? ""} disabled />
       </div>
       <div className="space-y-1.5">
         <Label className="text-xs uppercase tracking-wider text-muted-foreground">Phone</Label>
         <Input value={form.phone ?? ""} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+      </div>
+      <div className="space-y-1.5 sm:col-span-2">
+        <Label className="text-xs uppercase tracking-wider text-muted-foreground">Address</Label>
+        <Input value={form.address ?? ""} onChange={(e) => setForm({ ...form, address: e.target.value })} />
       </div>
       <div className="space-y-1.5">
         <Label className="text-xs uppercase tracking-wider text-muted-foreground">State</Label>
@@ -565,6 +568,11 @@ function ProfileForm() {
         <Label className="text-xs uppercase tracking-wider text-muted-foreground">Email</Label>
         <Input value={profile?.email ?? ""} disabled />
       </div>
+      <p className="text-[11px] text-muted-foreground sm:col-span-2">
+        Your legal name and date of birth are locked to your verified identity — contact support if
+        they need to change.
+      </p>
+
       <Button type="submit" disabled={busy} className="sm:col-span-2">
         {busy ? "Saving…" : "Save profile"}
       </Button>
