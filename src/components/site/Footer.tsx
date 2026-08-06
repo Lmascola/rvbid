@@ -48,10 +48,10 @@ export function Footer() {
 
         <div>
           <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider">Support</h4>
-          <p className="text-sm text-muted-foreground">support@rvbid.com</p>
+          <p className="text-sm text-muted-foreground">support@rvbidlive.com</p>
           <p className="mt-3 text-xs text-muted-foreground">
             All units are used and known to be bank repossessions or consigned units and are sold
-            "as is" with no warranties, titles, expressed or implied.
+            "as is" with no warranties, expressed or implied.
           </p>
         </div>
       </div>
