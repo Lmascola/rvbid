@@ -139,9 +139,9 @@ function Home() {
         <h2 className="font-display text-2xl sm:text-3xl">How RVBID works</h2>
         <div className="mt-8 grid gap-4 md:grid-cols-4">
           {[
-            { icon: ShieldCheck, title: "Register & verify", body: "Sign up, upload your ID and a selfie. Our team approves your account." },
-            { icon: Wallet, title: "Fund your wallet", body: "Deposit crypto to the address assigned to your account. Your balance is your bidding power." },
-            { icon: Timer, title: "Bid the clock", body: "Auctions run 12 hours from $0. Your bid amount is locked until you're outbid or it closes." },
+            { icon: ShieldCheck, title: "Register & verify", body: "Sign up, verify your email, then complete identity verification by uploading a valid government-issued ID and a selfie. Identity Verification is required before bidding." },
+            { icon: Wallet, title: "Fund your wallet", body: "Deposit cryptocurrency to your unique wallet address. Once confirmed, your balance becomes available for bidding." },
+            { icon: Timer, title: "Bid the clock", body: "Auctions run 12 hours from $0. Your bid amount is locked until you're outbid or it closes. If you're outbid, you'll be notified by email." },
             { icon: Gavel, title: "Win & collect", body: "Highest bid at zero wins. The amount is deducted and we help arrange the handover." },
           ].map((step) => (
             <div key={step.title} className="panel p-5">
