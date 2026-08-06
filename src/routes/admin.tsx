@@ -94,7 +94,7 @@ function AdminPage() {
       </p>
 
       <Tabs defaultValue="listings" className="mt-8">
-        <TabsList className="flex w-full flex-wrap justify-start gap-1">
+        <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
           <TabsTrigger value="listings">Listings</TabsTrigger>
           <TabsTrigger value="bids">Bids</TabsTrigger>
           <TabsTrigger value="members">Members &amp; KYC</TabsTrigger>
