@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Mail, MessageSquare, ShieldCheck } from "lucide-react";
+import { Mail, MessageSquare, Phone, ShieldCheck } from "lucide-react";
 import { db } from "@/lib/rvbid";
 
 export const Route = createFileRoute("/contact")({
