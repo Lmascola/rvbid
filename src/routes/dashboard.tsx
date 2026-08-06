@@ -573,35 +573,86 @@ function ProfileForm() {
 }
 
 function PasswordForm() {
+  const { user } = useAuth();
+  const [current, setCurrent] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   return (
     <form
       className="panel grid gap-3 p-5"
       onSubmit={async (e) => {
         e.preventDefault();
-        if (password.length < 8) {
-          toast.error("Use at least 8 characters.");
+        if (!current) {
+          toast.error("Enter your current password.");
+          return;
+        }
+        if (!passwordIsStrong(password)) {
+          toast.error("Choose a stronger new password.");
+          return;
+        }
+        if (password !== confirm) {
+          toast.error("Your new passwords don't match.");
           return;
         }
         setBusy(true);
+        // Re-authenticate first so the old password must be correct.
+        const { error: authError } = await supabase.auth.signInWithPassword({
+          email: user?.email ?? "",
+          password: current,
+        });
+        if (authError) {
+          setBusy(false);
+          toast.error("Your current password is incorrect.");
+          return;
+        }
         const { error } = await supabase.auth.updateUser({ password });
         setBusy(false);
         if (error) {
           toast.error(error.message);
           return;
         }
+        setCurrent("");
         setPassword("");
+        setConfirm("");
         toast.success("Password updated.");
       }}
     >
       <h2 className="text-sm font-semibold">Change password</h2>
       <Input
         type="password"
+        autoComplete="current-password"
+        placeholder="Current password"
+        value={current}
+        onChange={(e) => setCurrent(e.target.value)}
+      />
+      <Input
+        type="password"
+        autoComplete="new-password"
         placeholder="New password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
       />
+      <Input
+        type="password"
+        autoComplete="new-password"
+        placeholder="Confirm new password"
+        value={confirm}
+        onChange={(e) => setConfirm(e.target.value)}
+      />
+      <ul className="grid gap-1 sm:grid-cols-2">
+        {PASSWORD_RULES.map((rule) => {
+          const ok = rule.test(password);
+          return (
+            <li
+              key={rule.label}
+              className={`text-[11px] ${ok ? "text-success" : "text-muted-foreground"}`}
+            >
+              {ok ? "✓" : "•"} {rule.label}
+            </li>
+          );
+        })}
+      </ul>
       <Button type="submit" variant="outline" disabled={busy}>
         {busy ? "Updating…" : "Update password"}
       </Button>
