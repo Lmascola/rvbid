@@ -582,7 +582,134 @@ function ProfileForm() {
   );
 }
 
+function EmailForm() {
+  const { user, profile, refreshProfile } = useAuth();
+  const notify = useServerFn(notifyEmailChanged);
+  const [step, setStep] = useState<"form" | "verify">("form");
+  const [current, setCurrent] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const previousEmail = user?.email ?? profile?.email ?? "";
+
+  async function request(e: React.FormEvent) {
+    e.preventDefault();
+    const target = newEmail.trim().toLowerCase();
+    if (!current) { toast.error("Enter your current password."); return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(target)) { toast.error("Enter a valid email address."); return; }
+    if (target === previousEmail.toLowerCase()) { toast.error("That is already your login email."); return; }
+    setBusy(true);
+    // Re-authenticate so the current password must be correct.
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: previousEmail,
+      password: current,
+    });
+    if (authError) {
+      setBusy(false);
+      toast.error("Your current password is incorrect.");
+      return;
+    }
+    const { error } = await supabase.auth.updateUser({ email: target });
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    setStep("verify");
+    toast.success(`We sent a 6-digit code to ${target}.`);
+  }
+
+  async function confirm(e: React.FormEvent) {
+    e.preventDefault();
+    const target = newEmail.trim().toLowerCase();
+    if (code.trim().length < 6) { toast.error("Enter the 6-digit code."); return; }
+    setBusy(true);
+    const { error } = await supabase.auth.verifyOtp({
+      email: target,
+      token: code.trim(),
+      type: "email_change",
+    });
+    if (error) {
+      setBusy(false);
+      toast.error(error.message);
+      return;
+    }
+    // Keep the profile row in step with the login email. Nothing else on the
+    // account (roles, KYC, wallet, bids, notifications) is touched.
+    await db.from("profiles").update({ email: target }).eq("id", user!.id);
+    try {
+      await notify({ data: { previousEmail, newEmail: target } });
+    } catch {
+      // A failed courtesy notice must not undo a completed email change.
+    }
+    await refreshProfile();
+    setBusy(false);
+    setStep("form");
+    setCurrent("");
+    setNewEmail("");
+    setCode("");
+    toast.success("Your login email has been updated.");
+  }
+
+  if (step === "verify") {
+    return (
+      <form className="panel grid gap-3 p-5" onSubmit={confirm}>
+        <h2 className="text-sm font-semibold">Verify your new email</h2>
+        <p className="text-sm text-muted-foreground">
+          Enter the 6-digit code we sent to{" "}
+          <span className="text-foreground">{newEmail.trim().toLowerCase()}</span>. Your login email
+          only changes once this code is confirmed.
+        </p>
+        <Input
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          maxLength={6}
+          placeholder="123456"
+          value={code}
+          onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+        />
+        <Button type="submit" disabled={busy}>{busy ? "Verifying…" : "Confirm new email"}</Button>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={busy}
+          onClick={() => { setStep("form"); setCode(""); }}
+        >
+          Cancel
+        </Button>
+      </form>
+    );
+  }
+
+  return (
+    <form className="panel grid gap-3 p-5" onSubmit={request}>
+      <h2 className="text-sm font-semibold">Change email address</h2>
+      <p className="text-sm text-muted-foreground">
+        Current login email: <span className="text-foreground">{previousEmail}</span>
+      </p>
+      <Input
+        type="password"
+        autoComplete="current-password"
+        placeholder="Current password"
+        value={current}
+        onChange={(e) => setCurrent(e.target.value)}
+      />
+      <Input
+        type="email"
+        autoComplete="email"
+        placeholder="New email address"
+        value={newEmail}
+        onChange={(e) => setNewEmail(e.target.value)}
+      />
+      <Button type="submit" disabled={busy}>{busy ? "Sending code…" : "Send verification code"}</Button>
+      <p className="text-[11px] text-muted-foreground">
+        We'll email a code to the new address, and send a security notice to your old address once
+        the change is confirmed. Your verification status, wallet, bids and history stay exactly as
+        they are.
+      </p>
+    </form>
+  );
+}
+
 function PasswordForm() {
+
   const { user } = useAuth();
   const [current, setCurrent] = useState("");
   const [password, setPassword] = useState("");
