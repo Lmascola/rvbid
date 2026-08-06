@@ -278,7 +278,9 @@ function Dashboard() {
               />
             </div>
           </div>
+          <EmailForm />
           <PasswordForm />
+
         </TabsContent>
       </Tabs>
     </div>
