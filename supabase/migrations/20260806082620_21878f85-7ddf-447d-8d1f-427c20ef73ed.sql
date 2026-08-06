@@ -1,0 +1,1 @@
+INSERT INTO public.site_settings (key, value) VALUES ('support_phone', '+1 (888) 555-0199') ON CONFLICT (key) DO NOTHING; UPDATE public.site_settings SET value = 'support@rvbidlive.com' WHERE key = 'support_email';
