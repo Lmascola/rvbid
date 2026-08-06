@@ -21,18 +21,23 @@ export const Route = createFileRoute("/contact")({
 
 function ContactPage() {
   const { data } = useQuery({
-    queryKey: ["settings", "support_email"],
+    queryKey: ["settings", "support_contact"],
     queryFn: async () => {
       const { data } = await db
         .from("site_settings")
-        .select("value")
-        .eq("key", "support_email")
-        .maybeSingle();
-      return (data?.value as string) ?? "support@rvbid.com";
+        .select("key,value")
+        .in("key", ["support_email", "support_phone"]);
+      const rows = (data ?? []) as { key: string; value: string }[];
+      const get = (key: string) => rows.find((r) => r.key === key)?.value ?? "";
+      return {
+        email: get("support_email") || "support@rvbidlive.com",
+        phone: get("support_phone") || "+1 (888) 555-0199",
+      };
     },
   });
 
-  const email = data ?? "support@rvbid.com";
+  const email = data?.email ?? "support@rvbidlive.com";
+  const phone = data?.phone ?? "+1 (888) 555-0199";
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6">
@@ -48,6 +53,14 @@ function ContactPage() {
           <h2 className="mt-3 text-sm font-semibold">Email</h2>
           <a href={`mailto:${email}`} className="mt-1 block text-sm text-primary underline">
             {email}
+          </a>
+          <Phone className="mt-4 size-5 text-primary" />
+          <h2 className="mt-3 text-sm font-semibold">Phone</h2>
+          <a
+            href={`tel:${phone.replace(/[^\d+]/g, "")}`}
+            className="mt-1 block text-sm text-primary underline"
+          >
+            {phone}
           </a>
         </div>
         <div className="panel p-5">
