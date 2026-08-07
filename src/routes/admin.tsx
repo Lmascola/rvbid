@@ -100,6 +100,7 @@ function AdminPage() {
           <TabsTrigger value="members">Members &amp; KYC</TabsTrigger>
           <TabsTrigger value="wallets">Wallets</TabsTrigger>
           <TabsTrigger value="crypto">Crypto addresses</TabsTrigger>
+          <TabsTrigger value="reports">Report requests</TabsTrigger>
           <TabsTrigger value="content">Content</TabsTrigger>
         </TabsList>
 
@@ -108,7 +109,9 @@ function AdminPage() {
         <TabsContent value="members" className="mt-4"><MembersPanel /></TabsContent>
         <TabsContent value="wallets" className="mt-4"><WalletsPanel /></TabsContent>
         <TabsContent value="crypto" className="mt-4"><CryptoPanel /></TabsContent>
+        <TabsContent value="reports" className="mt-4"><ReportsPanel /></TabsContent>
         <TabsContent value="content" className="mt-4"><ContentPanel /></TabsContent>
+
       </Tabs>
     </div>
   );
