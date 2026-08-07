@@ -100,6 +100,7 @@ function AdminPage() {
           <TabsTrigger value="members">Members &amp; KYC</TabsTrigger>
           <TabsTrigger value="wallets">Wallets</TabsTrigger>
           <TabsTrigger value="crypto">Crypto addresses</TabsTrigger>
+          <TabsTrigger value="reports">Report requests</TabsTrigger>
           <TabsTrigger value="content">Content</TabsTrigger>
         </TabsList>
 
@@ -108,7 +109,9 @@ function AdminPage() {
         <TabsContent value="members" className="mt-4"><MembersPanel /></TabsContent>
         <TabsContent value="wallets" className="mt-4"><WalletsPanel /></TabsContent>
         <TabsContent value="crypto" className="mt-4"><CryptoPanel /></TabsContent>
+        <TabsContent value="reports" className="mt-4"><ReportsPanel /></TabsContent>
         <TabsContent value="content" className="mt-4"><ContentPanel /></TabsContent>
+
       </Tabs>
     </div>
   );
@@ -724,6 +727,93 @@ function MembersPanel() {
     </div>
   );
 }
+
+/* ----------------------------- Report requests ---------------------------- */
+
+function ReportsPanel() {
+  const data = useQuery({
+    queryKey: ["admin-report-orders"],
+    queryFn: async () => {
+      const { data: orders, error } = await db
+        .from("report_orders")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      const rows = (orders ?? []) as any[];
+      const userIds = [...new Set(rows.map((r) => r.user_id))];
+      const listingIds = [...new Set(rows.map((r) => r.listing_id))];
+      const [profiles, listings] = await Promise.all([
+        userIds.length
+          ? db.from("profiles").select("id,full_name,email,phone,kyc_status").in("id", userIds)
+          : Promise.resolve({ data: [] }),
+        listingIds.length
+          ? db.from("listings").select("id,title,vin,report_url").in("id", listingIds)
+          : Promise.resolve({ data: [] }),
+      ]);
+      const pMap = new Map((profiles.data ?? []).map((p: any) => [p.id, p]));
+      const lMap = new Map((listings.data ?? []).map((l: any) => [l.id, l]));
+      return rows.map((r) => ({ ...r, member: pMap.get(r.user_id), listing: lMap.get(r.listing_id) }));
+    },
+  });
+
+  const rows = data.data ?? [];
+
+  return (
+    <div className="panel overflow-hidden">
+      <h2 className="border-b border-border p-4 text-sm font-semibold">
+        Vehicle history report requests
+      </h2>
+      <p className="border-b border-border bg-muted/30 p-4 text-xs text-muted-foreground">
+        Every paid report request, newest first. Email the report to the member's address below.
+      </p>
+      <div className="divide-y divide-border">
+        {data.isLoading && (
+          <p className="p-4 text-sm text-muted-foreground">Loading requests…</p>
+        )}
+        {!data.isLoading && rows.length === 0 && (
+          <p className="p-4 text-sm text-muted-foreground">No report requests yet.</p>
+        )}
+        {rows.map((r: any) => (
+          <div key={r.id} className="space-y-1 p-4 text-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-medium">
+                {r.member?.full_name || "Member"}{" "}
+                <a
+                  className="font-normal text-primary underline"
+                  href={`mailto:${r.member?.email ?? ""}`}
+                >
+                  {r.member?.email ?? "—"}
+                </a>
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {money(r.amount)} · {r.status} · {dateTime(r.created_at)}
+              </span>
+            </div>
+            {r.member?.phone && (
+              <p className="text-xs text-muted-foreground">Phone: {r.member.phone}</p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              {r.listing?.title ?? "Listing"} · VIN{" "}
+              <span className="font-mono">{r.listing?.vin || "—"}</span>
+            </p>
+            {(r.report_url || r.listing?.report_url) && (
+              <a
+                className="text-xs text-primary underline"
+                href={r.report_url || r.listing?.report_url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open report link
+              </a>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 
 /* --------------------------------- Wallets --------------------------------- */
 
