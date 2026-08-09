@@ -193,7 +193,7 @@ function AuctionDetail() {
             </p>
           </div>
 
-          {listing.report_available && (
+          {listing.report_available && (!sold || report?.owned) && (
             <div className="panel mt-6 p-5">
               <h2 className="text-base font-semibold">Vehicle history report (optional)</h2>
               {report?.owned ? (
